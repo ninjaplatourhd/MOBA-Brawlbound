@@ -89,6 +89,7 @@ public class MultiplayerMenu : MonoBehaviour
     {
         LobbyManager.Instance.LobbyName = lobbyNameText.text;
         LobbyManager.Instance.IsOwner = true;
+        LobbyManager.Instance.PlayerName = "Player" + Random.Range(1, 1000);
         SceneManager.LoadScene(sceneName: "GameLobby");
     }
 

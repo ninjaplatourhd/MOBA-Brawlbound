@@ -28,11 +28,12 @@ public class MultiplayerLobby : MonoBehaviour
     {
         await UnityServices.InitializeAsync();
 
-        AuthenticationService.Instance.SignedIn += () =>
+        AuthenticationService.Instance.SignedIn += async () =>
         {
             Debug.Log("Singed in " + AuthenticationService.Instance.PlayerId);
-        };
+            await AuthenticationService.Instance.UpdatePlayerNameAsync(LobbyManager.Instance.PlayerName);
 
+        };
         AuthenticationService.Instance.SignInAnonymouslyAsync();
 
         if (LobbyManager.Instance.IsOwner)

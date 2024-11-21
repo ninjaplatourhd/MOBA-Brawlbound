@@ -34,6 +34,7 @@ public class LobbyPreviewLogic : MonoBehaviour
         LobbyManager.Instance.LobbyName = lobbyName;
         LobbyManager.Instance.LobbyID = lobbyId;
         LobbyManager.Instance.IsOwner = false;
+        LobbyManager.Instance.PlayerName = "Player" + Random.Range(1, 1000);
         SceneManager.LoadScene(sceneName: "GameLobby");
     }
 }

@@ -5,6 +5,7 @@ public class LobbyManager : MonoBehaviour
     public static LobbyManager Instance;
     public string LobbyName;
     public string LobbyID;
+    public string PlayerName;
     public int MaxPlayers;
     public string Password;
     public bool IsOwner;
