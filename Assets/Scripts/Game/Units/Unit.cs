@@ -3,8 +3,6 @@ using UnityEngine;
 
 public class Unit : NetworkBehaviour, ISelectableObject
 {
-
-
     public bool Selected => UnitManager.instance.SelectedUnits.Contains(gameObject);
 
     [SerializeField]

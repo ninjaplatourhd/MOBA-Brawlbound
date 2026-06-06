@@ -42,16 +42,31 @@ public class UnitMovement : MonoBehaviour
 
             if (Physics.Raycast(ray, out hit, Mathf.Infinity, _ground))
             {
-                _targetLocation = hit.point;
+                var centerPosition = UnitManager.instance.GetSelectedUnitCenter();
+                var positionDiff = gameObject.transform.position - centerPosition;
+                positionDiff.y = 0;
+                var targetPosition = hit.point + positionDiff;
+                _targetLocation = targetPosition;
+                shouldMove = true;
                 _agent.SetDestination(_targetLocation);
             }
+
         }
+
+        // if (shouldMove)
+        //  {
+
 
         if (_updatePathTimer >= _updatePathDelay)
         {
             _updatePathTimer = 0;
             _agent.SetDestination(_targetLocation);
         }
+
+
+        if (_targetLocation == gameObject.transform.position)
+            shouldMove = false;
+        //   }
 
     }
 

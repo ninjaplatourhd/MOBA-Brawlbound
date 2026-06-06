@@ -66,6 +66,43 @@ public class UnitManager : MonoBehaviour
 
             }
         }
+        else if (Input.GetMouseButtonDown(1))
+        {
+            RaycastHit hit;
+            Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
+            if (Physics.Raycast(ray, out hit, Mathf.Infinity, _clickable))
+            {
+                if (hit.collider.gameObject.TryGetComponent<Unit>(out Unit unit))
+                {
+                    if (unit.Player != _player)
+                    {
+                        //Pucamo enemija
+
+                    }
+                }
+            }
+        }
+        /*
+                if (Input.GetKeyDown(KeyCode.P))
+                {
+                    GameObject prefab = Resources.Load<GameObject>("Prefabs/Units/Super heavy tank (Malj)");
+                    if (prefab != null)
+                    {
+                        prefab.GetComponent<Unit>().Player = _player;
+                        RaycastHit hit;
+                        Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
+                        if (Physics.Raycast(ray, out hit, Mathf.Infinity, _ground))
+                        {
+                            Instantiate(prefab, hit.point, Quaternion.identity);
+                        }
+
+                    }
+                    else
+                    {
+                        IngameConsole.print("Nije pronadjen tenk");
+                    }
+
+                }*/
     }
 
     public void DeSelectAll()
@@ -102,5 +139,19 @@ public class UnitManager : MonoBehaviour
                 selectable.Select();
             }
         }
+    }
+
+    public Vector3 GetSelectedUnitCenter()
+    {
+        Vector3 positionCenter = new Vector3(0, 0, 0);
+
+        foreach (var unit in SelectedUnits)
+        {
+            positionCenter += unit.gameObject.transform.position;
+        }
+
+        positionCenter /= SelectedUnits.Count;
+        positionCenter.y = 0;
+        return positionCenter;
     }
 }
