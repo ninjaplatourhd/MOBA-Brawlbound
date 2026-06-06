@@ -11,6 +11,17 @@ public class Unit : NetworkBehaviour, ISelectableObject
     [SerializeField]
     public string Player;
 
+    public NetworkVariable<ulong> PlayerClientId = new NetworkVariable<ulong>(
+       0,
+       NetworkVariableReadPermission.Everyone,
+       NetworkVariableWritePermission.Server
+    );
+
+    public bool BelongsToLocalPlayer()
+    {
+        return PlayerClientId.Value == NetworkManager.Singleton.LocalClientId;
+    }
+
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {

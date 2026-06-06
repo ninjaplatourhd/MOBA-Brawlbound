@@ -43,15 +43,18 @@ public class UnitSpawner : NetworkBehaviour
         }
     }
 
-    [ServerRpc]
+    [ServerRpc(RequireOwnership = false)]
     private void SpawnTankServerRpc(Vector3 position, ServerRpcParams rpcParams = default)
     {
         ulong clientId = rpcParams.Receive.SenderClientId;
 
         GameObject tankObj = Instantiate(tankPrefab, position, Quaternion.identity);
 
+        Unit unit = tankObj.GetComponent<Unit>();
         NetworkObject netObj = tankObj.GetComponent<NetworkObject>();
 
-        netObj.SpawnWithOwnership(clientId);
+        unit.PlayerClientId.Value = clientId;
+
+        netObj.Spawn();
     }
 }

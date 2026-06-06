@@ -1,75 +1,75 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class UnitMovement : MonoBehaviour
+public class UnitMovement : NetworkBehaviour
 {
-
-
-    private Camera _camera;
     private NavMeshAgent _agent;
-    [SerializeField]
-    public LayerMask _ground;
-
-
-    private bool shouldMove;
-    private Vector3 _targetLocation;
     private Unit _unit;
 
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
-        _camera = Camera.main;
-        _agent = GetComponent<NavMeshAgent>();
-        _unit = gameObject.GetComponent<Unit>();
-        _targetLocation = gameObject.transform.position;
-    }
-
-
-
+    private Vector3 _targetLocation;
     private float _updatePathTimer;
     private const float _updatePathDelay = 0.5f;
-    void Update()
+
+    private void Start()
     {
-        //Timer Updates
-        _updatePathTimer += Time.deltaTime;
+        _agent = GetComponent<NavMeshAgent>();
+        _unit = GetComponent<Unit>();
+        _targetLocation = transform.position;
 
-
-        //Zadavanje komande za kretanje
-        if (_unit.Selected && Input.GetMouseButton(1))
+        // Only server should actually move the unit.
+        // Clients receive position through NetworkTransform.
+        if (!IsServer)
         {
-            RaycastHit hit;
-            Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
-
-            if (Physics.Raycast(ray, out hit, Mathf.Infinity, _ground))
-            {
-                var centerPosition = UnitManager.instance.GetSelectedUnitCenter();
-                var positionDiff = gameObject.transform.position - centerPosition;
-                positionDiff.y = 0;
-                var targetPosition = hit.point + positionDiff;
-                _targetLocation = targetPosition;
-                shouldMove = true;
-                _agent.SetDestination(_targetLocation);
-            }
-
+            _agent.enabled = false;
         }
+    }
 
-        // if (shouldMove)
-        //  {
+    private void Update()
+    {
+        if (!IsServer)
+            return;
 
+        _updatePathTimer += Time.deltaTime;
 
         if (_updatePathTimer >= _updatePathDelay)
         {
             _updatePathTimer = 0;
-            _agent.SetDestination(_targetLocation);
+
+            if (_agent.enabled)
+            {
+                _agent.SetDestination(_targetLocation);
+            }
         }
-
-
-        if (_targetLocation == gameObject.transform.position)
-            shouldMove = false;
-        //   }
-
     }
 
+    public void RequestMove(Vector3 targetPosition)
+    {
+        if (_unit == null)
+            _unit = GetComponent<Unit>();
 
+        // This is the important part.
+        // Do NOT use IsOwner here because the server owns all RTS units.
+        if (!_unit.BelongsToLocalPlayer())
+            return;
 
+        MoveServerRpc(targetPosition);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void MoveServerRpc(Vector3 targetPosition, ServerRpcParams rpcParams = default)
+    {
+        ulong senderClientId = rpcParams.Receive.SenderClientId;
+
+        // Server validates that this player is allowed to command this unit.
+        if (_unit.PlayerClientId.Value != senderClientId)
+            return;
+
+        _targetLocation = targetPosition;
+
+        if (_agent.enabled)
+        {
+            _agent.SetDestination(_targetLocation);
+        }
+    }
 }

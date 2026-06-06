@@ -54,8 +54,10 @@ public class UnitManager : MonoBehaviour
 
                 if (hit.collider.gameObject.TryGetComponent<Unit>(out Unit unit))
                 {
-                    if (unit.Player == _player)
+                    if (unit.BelongsToLocalPlayer())
+                    {
                         SelectUnit(hit.collider.gameObject);
+                    }
                 }
 
             }
@@ -68,18 +70,25 @@ public class UnitManager : MonoBehaviour
         }
         else if (Input.GetMouseButtonDown(1))
         {
-            RaycastHit hit;
             Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out hit, Mathf.Infinity, _clickable))
-            {
-                if (hit.collider.gameObject.TryGetComponent<Unit>(out Unit unit))
-                {
-                    if (unit.Player != _player)
-                    {
-                        //Pucamo enemija
 
+            // First check if we clicked on another unit, for attack later.
+            if (Physics.Raycast(ray, out RaycastHit unitHit, Mathf.Infinity, _clickable))
+            {
+                if (unitHit.collider.gameObject.TryGetComponent<Unit>(out Unit clickedUnit))
+                {
+                    if (!clickedUnit.BelongsToLocalPlayer())
+                    {
+                        // Attack enemy later.
+                        return;
                     }
                 }
+            }
+
+            // If we clicked ground, move selected units.
+            if (Physics.Raycast(ray, out RaycastHit groundHit, Mathf.Infinity, _ground))
+            {
+                MoveSelectedUnits(groundHit.point);
             }
         }
         /*
@@ -153,5 +162,26 @@ public class UnitManager : MonoBehaviour
         positionCenter /= SelectedUnits.Count;
         positionCenter.y = 0;
         return positionCenter;
+    }
+
+    private void MoveSelectedUnits(Vector3 targetPoint)
+    {
+        if (SelectedUnits.Count == 0)
+            return;
+
+        Vector3 centerPosition = GetSelectedUnitCenter();
+
+        foreach (GameObject unitObj in SelectedUnits)
+        {
+            Vector3 positionDiff = unitObj.transform.position - centerPosition;
+            positionDiff.y = 0;
+
+            Vector3 targetPosition = targetPoint + positionDiff;
+
+            if (unitObj.TryGetComponent<UnitMovement>(out UnitMovement movement))
+            {
+                movement.RequestMove(targetPosition);
+            }
+        }
     }
 }
