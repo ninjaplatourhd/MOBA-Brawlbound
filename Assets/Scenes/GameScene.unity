@@ -1277,6 +1277,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  startMovingAngle: 36
 --- !u!114 &425400383
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1328,6 +1329,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   _markerObject: {fileID: 2073380724}
   _barrels: []
+  _gunPivot: {fileID: 0}
   PlayerClientId:
     m_InternalValue: 0
   Health:
@@ -1557,6 +1559,80 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 453772035}
   m_CullTransparentMesh: 1
+--- !u!1 &495730986
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 495730988}
+  - component: {fileID: 495730987}
+  - component: {fileID: 495730989}
+  m_Layer: 0
+  m_Name: ProjectileSystem
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &495730987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 495730986}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  GlobalObjectIdHash: 2234178266
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
+--- !u!4 &495730988
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 495730986}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 723.8812, y: 67.86467, z: 1521.9369}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &495730989
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 495730986}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a52920a4a1e6b3a49a77cbe529a4b621, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  projectileHitMask:
+    serializedVersion: 2
+    m_Bits: 192
 --- !u!1001 &582551649
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1687,6 +1763,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  startMovingAngle: 36
 --- !u!114 &648880131
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1738,6 +1815,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   _markerObject: {fileID: 1631198709}
   _barrels: []
+  _gunPivot: {fileID: 0}
   PlayerClientId:
     m_InternalValue: 0
   Health:
@@ -1828,6 +1906,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UnitId: super_heavy_tank_malj
   DisplayName: Super Heavy Tank (Malj)
+  MovesGun: 0
   Range: 50
   DamageBonus: 0
   Armor: 10
@@ -2930,6 +3009,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  startMovingAngle: 36
 --- !u!114 &1323910092
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2981,6 +3061,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   _markerObject: {fileID: 248030903}
   _barrels: []
+  _gunPivot: {fileID: 0}
   PlayerClientId:
     m_InternalValue: 0
   Health:
@@ -3088,6 +3169,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UnitId: super_heavy_tank_malj
   DisplayName: Super Heavy Tank (Malj)
+  MovesGun: 0
   Range: 50
   DamageBonus: 0
   Armor: 10
@@ -5073,3 +5155,4 @@ SceneRoots:
   - {fileID: 2779572850043182887}
   - {fileID: 1972761300}
   - {fileID: 2103267128}
+  - {fileID: 495730988}

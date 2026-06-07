@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class UnitCombat : NetworkBehaviour
 {
-    [SerializeField] private GameObject projectilePrefab;
+
     [SerializeField] private Transform fallbackBarrel;
     [SerializeField] private float projectileSpeed = 35f;
     [SerializeField] private float autoAggroInterval = 0.5f;
@@ -209,6 +209,17 @@ public class UnitCombat : NetworkBehaviour
         }
     }
 
+    private Transform GetBarrel()
+    {
+        if (unit != null && unit.Barrels != null && unit.Barrels.Count > 0)
+        {
+            return unit.Barrels[0];
+        }
+
+        Debug.LogError($"{gameObject.name} nema nijedan barrel podešen u Unit komponenti.");
+        return null;
+    }
+
     public void ServerAggroOn(Unit attacker)
     {
         if (!IsServer)
@@ -243,33 +254,34 @@ public class UnitCombat : NetworkBehaviour
 
     private void FireProjectile(Unit targetUnit, Weapon weapon)
     {
-        if (projectilePrefab == null)
+        if (!IsServer)
+            return;
+
+        if (targetUnit == null)
+            return;
+
+        Transform barrel = GetBarrel();
+
+        if (barrel == null)
+            return;
+
+        Vector3 aimPoint = targetUnit.transform.position + Vector3.up * 1.2f;
+        Vector3 direction = aimPoint - barrel.position;
+
+        if (direction.sqrMagnitude < 0.01f)
+            return;
+
+        if (ServerProjectileSystem.Instance == null)
         {
-            Debug.LogError("Projectile prefab is missing on UnitCombat.");
+            Debug.LogError("ServerProjectileSystem ne postoji u sceni.");
             return;
         }
 
-        Transform barrel = fallbackBarrel != null ? fallbackBarrel : transform;
-
-        GameObject projectileObj = Instantiate(
-            projectilePrefab,
+        ServerProjectileSystem.Instance.ServerFireProjectile(
+            unit,
             barrel.position,
-            barrel.rotation
-        );
-
-        Projectile projectile = projectileObj.GetComponent<Projectile>();
-        NetworkObject projectileNetObj = projectileObj.GetComponent<NetworkObject>();
-
-        projectileNetObj.Spawn();
-
-        float finalDamage = weapon.Damage + data.DamageBonus;
-
-        projectile.Setup(
-            unit.NetworkObject,
-            targetUnit.NetworkObject,
-            unit.PlayerClientId.Value,
-            finalDamage,
-            35f
+            direction.normalized,
+            weapon
         );
     }
 }
