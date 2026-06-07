@@ -6,7 +6,11 @@ public class UnitCombat : NetworkBehaviour
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private Transform fallbackBarrel;
     [SerializeField] private float projectileSpeed = 35f;
+    [SerializeField] private float autoAggroInterval = 0.5f;
+    [SerializeField] private float autoAggroDelayAfterMoveOrder = 1f;
 
+    private float nextAutoAggroTime;
+    private float suppressAutoAggroUntil;
     private Unit unit;
     private UnitData data;
     private NetworkObject currentTarget;
@@ -25,6 +29,18 @@ public class UnitCombat : NetworkBehaviour
             return;
 
         ServerUpdateAttack();
+    }
+
+    public void ServerClearAttackTarget()
+    {
+        if (!IsServer)
+            return;
+
+        currentTarget = null;
+        suppressAutoAggroUntil = Time.time + autoAggroDelayAfterMoveOrder;
+
+        if (movement != null)
+            movement.ServerClearCombatLookTarget();
     }
 
     public void RequestAttack(Unit targetUnit)
@@ -70,6 +86,8 @@ public class UnitCombat : NetworkBehaviour
     {
         if (currentTarget == null)
         {
+            TryAutoAcquireTarget();
+
             if (movement != null)
                 movement.ServerClearCombatLookTarget();
 
@@ -139,6 +157,73 @@ public class UnitCombat : NetworkBehaviour
         FireProjectile(targetUnit, weapon);
     }
 
+    private void TryAutoAcquireTarget()
+    {
+        if (!IsServer)
+            return;
+
+        if (Time.time < suppressAutoAggroUntil)
+            return;
+
+        if (Time.time < nextAutoAggroTime)
+            return;
+
+        nextAutoAggroTime = Time.time + autoAggroInterval;
+
+        if (data == null || data.Weapons == null || data.Weapons.Count == 0)
+            return;
+
+        Weapon weapon = data.Weapons[0];
+
+        Unit bestTarget = null;
+        float bestDistanceSqr = weapon.Range * weapon.Range;
+
+        foreach (GameObject unitObj in UnitManager.instance.AllUnitsList)
+        {
+            if (unitObj == null || unitObj == gameObject)
+                continue;
+
+            Unit possibleTarget = unitObj.GetComponent<Unit>();
+
+            if (possibleTarget == null)
+                continue;
+
+            if (possibleTarget.Health.Value <= 0f)
+                continue;
+
+            if (possibleTarget.PlayerClientId.Value == unit.PlayerClientId.Value)
+                continue;
+
+            float distanceSqr = (possibleTarget.transform.position - transform.position).sqrMagnitude;
+
+            if (distanceSqr <= bestDistanceSqr)
+            {
+                bestDistanceSqr = distanceSqr;
+                bestTarget = possibleTarget;
+            }
+        }
+
+        if (bestTarget != null)
+        {
+            currentTarget = bestTarget.NetworkObject;
+        }
+    }
+
+    public void ServerAggroOn(Unit attacker)
+    {
+        if (!IsServer)
+            return;
+
+        if (attacker == null)
+            return;
+
+        if (attacker.PlayerClientId.Value == unit.PlayerClientId.Value)
+            return;
+
+        currentTarget = attacker.NetworkObject;
+        suppressAutoAggroUntil = 0f;
+    }
+
     private Transform GetAimTransform()
     {
         if (data != null && data.MovesGun && unit.GunPivot != null)
@@ -180,10 +265,11 @@ public class UnitCombat : NetworkBehaviour
         float finalDamage = weapon.Damage + data.DamageBonus;
 
         projectile.Setup(
+            unit.NetworkObject,
             targetUnit.NetworkObject,
             unit.PlayerClientId.Value,
             finalDamage,
-            projectileSpeed
+            35f
         );
     }
 }

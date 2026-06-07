@@ -90,13 +90,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0, g: 0, b: 0, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
+  m_Sprite: {fileID: 21300000, guid: b662596d4559c9347a2e13e1ccf3cb74, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -171,11 +171,11 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
+  m_Sprite: {fileID: 21300000, guid: b662596d4559c9347a2e13e1ccf3cb74, type: 3}
+  m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
-  m_FillMethod: 4
+  m_FillMethod: 0
   m_FillAmount: 1
   m_FillClockwise: 1
   m_FillOrigin: 0
@@ -280,6 +280,7 @@ GameObject:
   - component: {fileID: 1279986771839535971}
   - component: {fileID: 4406380898827261523}
   - component: {fileID: 5839746071791325581}
+  - component: {fileID: 9195395976244061882}
   m_Layer: 7
   m_Name: HealthBarCanvas
   m_TagString: Untagged
@@ -371,6 +372,19 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
+--- !u!114 &9195395976244061882
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8795879886834961223}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 76ee995bea87feb478953482e2a946c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  fillImage: {fileID: 8191604232518049774}
 --- !u!1001 &7572702454443864724
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -517,7 +531,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1885601786
+  GlobalObjectIdHash: 3134993084
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -546,6 +560,7 @@ MonoBehaviour:
   _markerObject: {fileID: 8669175265721750370}
   _barrels:
   - {fileID: 1021614474475707008}
+  _gunPivot: {fileID: 0}
   PlayerClientId:
     m_InternalValue: 0
   Health:
@@ -601,6 +616,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
+  startMovingAngle: 36
 --- !u!195 &2050731742973661602
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -637,6 +653,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UnitId: super_heavy_tank_malj
   DisplayName: Super Heavy Tank (Malj)
+  MovesGun: 0
   Range: 50
   DamageBonus: 0
   Armor: 10
@@ -671,6 +688,8 @@ MonoBehaviour:
   projectilePrefab: {fileID: 1949386386527897104, guid: 7df80a55ba9d619448964c63b0324488, type: 3}
   fallbackBarrel: {fileID: 0}
   projectileSpeed: 35
+  autoAggroInterval: 0.5
+  autoAggroDelayAfterMoveOrder: 1
 --- !u!4 &7970559625255163263 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}

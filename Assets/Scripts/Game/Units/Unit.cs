@@ -75,7 +75,7 @@ public class Unit : NetworkBehaviour, ISelectableObject, IDamageable
         return PlayerClientId.Value == NetworkManager.Singleton.LocalClientId;
     }
 
-    public void Damage(float amount)
+    public void Damage(float amount, Unit attacker)
     {
         if (!IsServer)
             return;
@@ -84,6 +84,13 @@ public class Unit : NetworkBehaviour, ISelectableObject, IDamageable
         float reducedDamage = Mathf.Max(1f, amount - armor);
 
         Health.Value = Mathf.Max(0f, Health.Value - reducedDamage);
+
+        UnitCombat combat = GetComponent<UnitCombat>();
+
+        if (combat != null && attacker != null && attacker != this)
+        {
+            combat.ServerAggroOn(attacker);
+        }
 
         if (Health.Value <= 0f)
         {

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-public class UnitHealthBarUI : MonoBehaviour
+public class UnitHealthBar : MonoBehaviour
 {
     [SerializeField] private Image fillImage;
 
@@ -12,12 +12,11 @@ public class UnitHealthBarUI : MonoBehaviour
     {
         unit = GetComponentInParent<Unit>();
         mainCamera = Camera.main;
+    }
 
-        if (unit != null)
-        {
-            unit.Health.OnValueChanged += OnHealthChanged;
-            UpdateHealthBar();
-        }
+    private void Update()
+    {
+        UpdateHealthBar();
     }
 
     private void LateUpdate()
@@ -31,21 +30,11 @@ public class UnitHealthBarUI : MonoBehaviour
         }
     }
 
-    private void OnDestroy()
-    {
-        if (unit != null)
-        {
-            unit.Health.OnValueChanged -= OnHealthChanged;
-        }
-    }
-
-    private void OnHealthChanged(float previousValue, float newValue)
-    {
-        UpdateHealthBar();
-    }
-
     private void UpdateHealthBar()
     {
+        if (unit == null)
+            unit = GetComponentInParent<Unit>();
+
         if (unit == null || fillImage == null)
             return;
 

@@ -9,6 +9,12 @@ public class Projectile : NetworkBehaviour
         NetworkVariableWritePermission.Server
     );
 
+    public NetworkVariable<ulong> SourceNetworkObjectId = new NetworkVariable<ulong>(
+    0,
+    NetworkVariableReadPermission.Everyone,
+    NetworkVariableWritePermission.Server
+);
+
     public NetworkVariable<ulong> OwnerPlayerClientId = new NetworkVariable<ulong>(
         0,
         NetworkVariableReadPermission.Everyone,
@@ -32,11 +38,12 @@ public class Projectile : NetworkBehaviour
 
     private float lifeTimer;
 
-    public void Setup(NetworkObject target, ulong ownerPlayerClientId, float damage, float speed)
+    public void Setup(NetworkObject source, NetworkObject target, ulong ownerPlayerClientId, float damage, float speed)
     {
-        if (!IsServer)
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
             return;
 
+        SourceNetworkObjectId.Value = source.NetworkObjectId;
         TargetNetworkObjectId.Value = target.NetworkObjectId;
         OwnerPlayerClientId.Value = ownerPlayerClientId;
         Damage.Value = damage;
@@ -79,7 +86,16 @@ public class Projectile : NetworkBehaviour
 
         if (direction.magnitude <= hitDistance || direction.magnitude <= distanceThisFrame)
         {
-            targetUnit.Damage(Damage.Value);
+            Unit attackerUnit = null;
+
+            if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(
+                    SourceNetworkObjectId.Value,
+                    out NetworkObject sourceNetworkObject))
+            {
+                attackerUnit = sourceNetworkObject.GetComponent<Unit>();
+            }
+
+            targetUnit.Damage(Damage.Value, attackerUnit);
             NetworkObject.Despawn(true);
             return;
         }

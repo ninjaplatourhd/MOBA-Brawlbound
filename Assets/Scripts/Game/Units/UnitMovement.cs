@@ -174,6 +174,12 @@ public class UnitMovement : NetworkBehaviour
         if (_unit.PlayerClientId.Value != senderClientId)
             return;
 
+        UnitCombat combat = GetComponent<UnitCombat>();
+        if (combat != null)
+        {
+            combat.ServerClearAttackTarget();
+        }
+
         _targetLocation = targetPosition;
         _hasMoveTarget = true;
 
