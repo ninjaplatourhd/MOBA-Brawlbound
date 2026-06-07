@@ -72,20 +72,20 @@ public class UnitManager : MonoBehaviour
         {
             Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
 
-            // First check if we clicked on another unit, for attack later.
             if (Physics.Raycast(ray, out RaycastHit unitHit, Mathf.Infinity, _clickable))
             {
-                if (unitHit.collider.gameObject.TryGetComponent<Unit>(out Unit clickedUnit))
+                Unit clickedUnit = unitHit.collider.GetComponentInParent<Unit>();
+
+                if (clickedUnit != null)
                 {
                     if (!clickedUnit.BelongsToLocalPlayer())
                     {
-                        // Attack enemy later.
+                        AttackSelectedUnits(clickedUnit);
                         return;
                     }
                 }
             }
 
-            // If we clicked ground, move selected units.
             if (Physics.Raycast(ray, out RaycastHit groundHit, Mathf.Infinity, _ground))
             {
                 MoveSelectedUnits(groundHit.point);
@@ -162,6 +162,30 @@ public class UnitManager : MonoBehaviour
         positionCenter /= SelectedUnits.Count;
         positionCenter.y = 0;
         return positionCenter;
+    }
+
+    private void AttackSelectedUnits(Unit targetUnit)
+    {
+        if (targetUnit == null)
+            return;
+
+        if (SelectedUnits.Count == 0)
+            return;
+
+        foreach (GameObject unitObj in SelectedUnits)
+        {
+            if (unitObj == null)
+                continue;
+
+            if (unitObj.TryGetComponent<UnitCombat>(out UnitCombat combat))
+            {
+                combat.RequestAttack(targetUnit);
+            }
+            else
+            {
+                Debug.LogWarning($"{unitObj.name} nema UnitCombat komponentu.");
+            }
+        }
     }
 
     private void MoveSelectedUnits(Vector3 targetPoint)

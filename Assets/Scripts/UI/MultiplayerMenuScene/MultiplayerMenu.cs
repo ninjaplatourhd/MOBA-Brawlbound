@@ -27,14 +27,12 @@ public class MultiplayerMenu : MonoBehaviour
     {
         await UnityServices.InitializeAsync();
 
-        AuthenticationService.Instance.SignedIn += () =>
+        if (!AuthenticationService.Instance.IsSignedIn)
         {
-            Debug.Log("Singed in " + AuthenticationService.Instance.PlayerId);
-        };
+            await AuthenticationService.Instance.SignInAnonymouslyAsync();
+        }
 
-
-
-        AuthenticationService.Instance.SignInAnonymouslyAsync();
+        Debug.Log("Signed in " + AuthenticationService.Instance.PlayerId);
 
         ListLobbies();
     }

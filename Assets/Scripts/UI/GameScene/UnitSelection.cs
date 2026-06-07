@@ -41,13 +41,11 @@ public class UnitSelection : MonoBehaviour
              Mathf.Abs(mousePosition.y - _startingPoint.y)
          );
 
-            // Adjust the pivot based on drag direction
             rectTransform.pivot = new Vector2(
                 mousePosition.x < _startingPoint.x ? 1 : 0,
                 mousePosition.y < _startingPoint.y ? 1 : 0
             );
 
-            // Update the rectangle size
             rectTransform.sizeDelta = size;
         }
         if (Input.GetMouseButtonUp(0))
@@ -59,37 +57,41 @@ public class UnitSelection : MonoBehaviour
 
     private void SelectUnitsInRectangle()
     {
-        // Convert the rectangle's bounds to world space
         Vector3[] worldCorners = new Vector3[4];
         rectTransform.GetWorldCorners(worldCorners);
 
-        // Extract the bottom-left and top-right corners
         Vector3 bottomLeft = worldCorners[0];
         Vector3 topRight = worldCorners[2];
 
         List<GameObject> selectableUnits = UnitManager.instance.AllUnitsList;
-
         List<GameObject> selectedUnits = new List<GameObject>();
+
         foreach (var unit in selectableUnits)
         {
-            // Check if the unit's screen position is within the selection rectangle
-            Vector2 unitScreenPosition = RectTransformUtility.WorldToScreenPoint(_camera, unit.transform.position);
+            if (unit == null)
+                continue;
 
-            if (unitScreenPosition.x >= bottomLeft.x && unitScreenPosition.x <= topRight.x &&
-                unitScreenPosition.y >= bottomLeft.y && unitScreenPosition.y <= topRight.y)
+            Vector2 unitScreenPosition = RectTransformUtility.WorldToScreenPoint(
+                _camera,
+                unit.transform.position
+            );
+
+            if (unitScreenPosition.x >= bottomLeft.x &&
+                unitScreenPosition.x <= topRight.x &&
+                unitScreenPosition.y >= bottomLeft.y &&
+                unitScreenPosition.y <= topRight.y)
             {
                 if (unit.TryGetComponent<Unit>(out Unit unitObject))
                 {
-                    if (unitObject.Player == _player)
+                    if (unitObject.BelongsToLocalPlayer())
                     {
                         selectedUnits.Add(unit);
                     }
                 }
-
-                UnitManager.instance.SelectUnits(selectedUnits);
             }
-
         }
+
+        UnitManager.instance.SelectUnits(selectedUnits);
     }
 }
 

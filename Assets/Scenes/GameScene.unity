@@ -1263,7 +1263,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &425400382
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1276,9 +1276,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 089b69fed30dc2d4caf40b2e57096576, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _ground:
-    serializedVersion: 2
-    m_Bits: 64
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &425400383
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1329,7 +1327,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   _markerObject: {fileID: 2073380724}
-  Player: Player2
+  _barrels: []
+  PlayerClientId:
+    m_InternalValue: 0
+  Health:
+    m_InternalValue: 100
+  MaxHealth:
+    m_InternalValue: 100
 --- !u!114 &425400385
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1652,7 +1656,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &648880129
 Transform:
   m_ObjectHideFlags: 0
@@ -1682,9 +1686,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 089b69fed30dc2d4caf40b2e57096576, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _ground:
-    serializedVersion: 2
-    m_Bits: 64
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &648880131
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1735,7 +1737,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   _markerObject: {fileID: 1631198709}
-  Player: Player1
+  _barrels: []
+  PlayerClientId:
+    m_InternalValue: 0
+  Health:
+    m_InternalValue: 100
+  MaxHealth:
+    m_InternalValue: 100
 --- !u!136 &648880133
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -1818,6 +1826,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 177e95bd168b9fa4980719a9700ca046, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  UnitId: super_heavy_tank_malj
+  DisplayName: Super Heavy Tank (Malj)
+  Range: 50
+  DamageBonus: 0
+  Armor: 10
+  AttackSpeed: 1
+  MaxHealth: 100
+  MaxSpeed: 5
+  MaxAngularSpeed: 120
+  MaxAcceleration: 8
+  Weapons: []
 --- !u!1 &679554077
 GameObject:
   m_ObjectHideFlags: 0
@@ -2897,7 +2916,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1323910091
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2910,9 +2929,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 089b69fed30dc2d4caf40b2e57096576, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _ground:
-    serializedVersion: 2
-    m_Bits: 64
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &1323910092
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2963,7 +2980,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   _markerObject: {fileID: 248030903}
-  Player: Player1
+  _barrels: []
+  PlayerClientId:
+    m_InternalValue: 0
+  Health:
+    m_InternalValue: 100
+  MaxHealth:
+    m_InternalValue: 100
 --- !u!136 &1323910094
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -3063,6 +3086,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 177e95bd168b9fa4980719a9700ca046, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  UnitId: super_heavy_tank_malj
+  DisplayName: Super Heavy Tank (Malj)
+  Range: 50
+  DamageBonus: 0
+  Armor: 10
+  AttackSpeed: 1
+  MaxHealth: 100
+  MaxSpeed: 5
+  MaxAngularSpeed: 120
+  MaxAcceleration: 8
+  Weapons: []
 --- !u!4 &1343322625 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: ae2b58638b18d7b479d7677a81e234b0, type: 3}
@@ -4626,6 +4660,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Super heavy tank (Malj)
       objectReference: {fileID: 0}
+    - target: {fileID: 7338278125657640901, guid: 584845b3675600d47ab414ba52f1153c, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7970559625255163263, guid: 584845b3675600d47ab414ba52f1153c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 60.75
@@ -4837,11 +4875,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3742088199192548870, guid: 695d04a66633b184c9108ff300a11754, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3742088199192548870, guid: 695d04a66633b184c9108ff300a11754, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3742088199192548870, guid: 695d04a66633b184c9108ff300a11754, type: 3}
       propertyPath: m_AnchorMin.y
@@ -4953,11 +4991,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8451249347622149103, guid: 695d04a66633b184c9108ff300a11754, type: 3}
       propertyPath: m_SizeDelta.y
-      value: -1038
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8451249347622149103, guid: 695d04a66633b184c9108ff300a11754, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.0009765625
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8451249347622149103, guid: 695d04a66633b184c9108ff300a11754, type: 3}
       propertyPath: m_AnchoredPosition.y
@@ -4977,15 +5015,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9071296431819532237, guid: 695d04a66633b184c9108ff300a11754, type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9071296431819532237, guid: 695d04a66633b184c9108ff300a11754, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9071296431819532237, guid: 695d04a66633b184c9108ff300a11754, type: 3}
       propertyPath: m_SizeDelta.x
-      value: -30
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9071296431819532237, guid: 695d04a66633b184c9108ff300a11754, type: 3}
       propertyPath: m_SizeDelta.y
@@ -4993,11 +5031,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9071296431819532237, guid: 695d04a66633b184c9108ff300a11754, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -957.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9071296431819532237, guid: 695d04a66633b184c9108ff300a11754, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 519
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

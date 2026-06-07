@@ -28,6 +28,7 @@ public class MultiplayerLobby : MonoBehaviour
     {
         await UnityServices.InitializeAsync();
 
+
         AuthenticationService.Instance.SignedIn += async () =>
         {
             Debug.Log("Singed in " + AuthenticationService.Instance.PlayerId);
@@ -35,6 +36,18 @@ public class MultiplayerLobby : MonoBehaviour
 
         };
         AuthenticationService.Instance.SignInAnonymouslyAsync();
+
+
+        NetworkManager.Singleton.OnClientDisconnectCallback += (clientId) =>
+        {
+            Debug.Log($"Client disconnected: {clientId}");
+
+            if (!NetworkManager.Singleton.IsServer)
+            {
+                Debug.Log("Disconnect reason: " + NetworkManager.Singleton.DisconnectReason);
+            }
+        };
+
 
         if (LobbyManager.Instance.IsOwner)
             CreateLobby();

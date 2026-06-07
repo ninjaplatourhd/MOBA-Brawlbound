@@ -1,21 +1,29 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class UnitData : MonoBehaviour
 {
-    public float Range { get; set; } = 50;
-    public float BaseDamage { get; set; } = 20;
-    public float MaxHealth { get; set; } = 100;
-    public float Health { get; set; } = 100;
-    public float Armor { get; set; } = 10;
-    public bool MovesGun { get; set; } = false;
-    public float Speed { get; set; } = 0;
-    public float MaxSpeed { get; set; } = 5;
-    public float AngularSpeed { get; set; } = 0;
-    public float MaxAngularSpeed { get; set; } = 3;
-    public float Acceleration { get; set; } = 0;
-    public float MaxAcceleration { get; set; } = 1;
-    public string WeaponTypeName { get; set; } = "Cannon";
-    public float AttackSpeed { get; set; } = 60;
+    [Header("General")]
+    public string UnitId = "super_heavy_tank_malj";
+    public string DisplayName = "Super Heavy Tank (Malj)";
+
+    [Header("Combat")]
+    public bool MovesGun = false;
+    public float Range = 50f;
+    public float DamageBonus = 0f;
+    public float Armor = 10f;
+    public float AttackSpeed = 1f;
+
+    [Header("Health")]
+    public float MaxHealth = 100f;
+
+    [Header("Movement")]
+    public float MaxSpeed = 5f;
+    public float MaxAngularSpeed = 120f;
+    public float MaxAcceleration = 8f;
+
+    [Header("Weapons")]
+    public List<Weapon> Weapons = new List<Weapon>();
 
 }
 
