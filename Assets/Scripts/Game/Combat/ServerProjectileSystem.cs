@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
@@ -122,10 +121,10 @@ public class ServerProjectileSystem : NetworkBehaviour
     }
 
     private bool TryFindHit(
-        ServerProjectile projectile,
-        Vector3 oldPosition,
-        float travelDistance,
-        out RaycastHit chosenHit)
+    ServerProjectile projectile,
+    Vector3 oldPosition,
+    float travelDistance,
+    out RaycastHit chosenHit)
     {
         chosenHit = default;
 
@@ -141,7 +140,7 @@ public class ServerProjectileSystem : NetworkBehaviour
         if (hits.Length == 0)
             return false;
 
-        Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
 
         foreach (RaycastHit hit in hits)
         {
@@ -149,11 +148,9 @@ public class ServerProjectileSystem : NetworkBehaviour
 
             if (hitUnit != null)
             {
-                // Ne udaraj samog sebe.
                 if (hitUnit.NetworkObjectId == projectile.SourceUnitNetworkObjectId)
                     continue;
 
-                // Za sada ignoriši friendly fire.
                 if (hitUnit.PlayerClientId.Value == projectile.OwnerClientId)
                     continue;
 
@@ -161,7 +158,21 @@ public class ServerProjectileSystem : NetworkBehaviour
                 return true;
             }
 
-            // Ako nije unit, tretiramo kao terrain/wall/obstacle hit.
+            Building hitBuilding = hit.collider.GetComponentInParent<Building>();
+
+            if (hitBuilding != null)
+            {
+                if (hitBuilding.NetworkObjectId == projectile.SourceUnitNetworkObjectId)
+                    continue;
+
+                if (hitBuilding.PlayerClientId.Value == projectile.OwnerClientId)
+                    continue;
+
+                chosenHit = hit;
+                return true;
+            }
+
+            // terrain/wall hit
             chosenHit = hit;
             return true;
         }
@@ -173,20 +184,31 @@ public class ServerProjectileSystem : NetworkBehaviour
     {
         Vector3 impactPosition = hit.point;
 
+        Unit attackerUnit = null;
+
+        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(
+                projectile.SourceUnitNetworkObjectId,
+                out NetworkObject sourceObject))
+        {
+            attackerUnit = sourceObject.GetComponent<Unit>();
+        }
+
         Unit hitUnit = hit.collider.GetComponentInParent<Unit>();
 
         if (hitUnit != null)
         {
-            Unit attackerUnit = null;
-
-            if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(
-                    projectile.SourceUnitNetworkObjectId,
-                    out NetworkObject sourceObject))
-            {
-                attackerUnit = sourceObject.GetComponent<Unit>();
-            }
-
             hitUnit.Damage(projectile.Damage, attackerUnit);
+            ProjectileImpactClientRpc(projectile.Id, impactPosition);
+            return;
+        }
+
+        Building hitBuilding = hit.collider.GetComponentInParent<Building>();
+
+        if (hitBuilding != null)
+        {
+            hitBuilding.Damage(projectile.Damage, attackerUnit);
+            ProjectileImpactClientRpc(projectile.Id, impactPosition);
+            return;
         }
 
         ProjectileImpactClientRpc(projectile.Id, impactPosition);
@@ -238,8 +260,7 @@ public class ServerProjectileSystem : NetworkBehaviour
             clientVisuals.Remove(projectileId);
         }
 
-        // Kasnije ovde možeš spawnovati explosion visual.
-        // Instantiate(explosionPrefab, impactPosition, Quaternion.identity);
+        //TODO dodati particle na hit
     }
 
     [ClientRpc]

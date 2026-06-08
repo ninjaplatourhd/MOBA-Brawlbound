@@ -43,9 +43,9 @@ public class UnitCombat : NetworkBehaviour
             movement.ServerClearCombatLookTarget();
     }
 
-    public void RequestAttack(Unit targetUnit)
+    public void RequestAttack(GameObject targetObject)
     {
-        if (targetUnit == null)
+        if (targetObject == null)
             return;
 
         if (unit == null)
@@ -54,7 +54,13 @@ public class UnitCombat : NetworkBehaviour
         if (!unit.BelongsToLocalPlayer())
             return;
 
-        NetworkObjectReference targetRef = new NetworkObjectReference(targetUnit.NetworkObject);
+        NetworkObject targetNetObj = targetObject.GetComponent<NetworkObject>();
+
+        if (targetNetObj == null)
+            return;
+
+        NetworkObjectReference targetRef = new NetworkObjectReference(targetNetObj);
+
         SetAttackTargetServerRpc(targetRef);
     }
 
@@ -69,17 +75,17 @@ public class UnitCombat : NetworkBehaviour
         if (!targetRef.TryGet(out NetworkObject targetObject))
             return;
 
-        Unit targetUnit = targetObject.GetComponent<Unit>();
+        IOwnedObject ownedTarget = targetObject.GetComponent<IOwnedObject>();
+        IDamageable damageableTarget = targetObject.GetComponent<IDamageable>();
 
-        if (targetUnit == null)
+        if (ownedTarget == null || damageableTarget == null)
             return;
 
-        if (targetUnit.PlayerClientId.Value == senderClientId)
+        // Ne napadaj svoje.
+        if (ownedTarget.OwnerClientId == senderClientId)
             return;
 
         currentTarget = targetObject;
-
-        Debug.Log($"Unit {name} got attack target: {targetUnit.name}");
     }
 
     private void ServerUpdateAttack()
@@ -97,9 +103,16 @@ public class UnitCombat : NetworkBehaviour
         if (data == null || data.Weapons == null || data.Weapons.Count == 0)
             return;
 
-        Unit targetUnit = currentTarget.GetComponent<Unit>();
+        IDamageable damageableTarget = currentTarget.GetComponent<IDamageable>();
+        IOwnedObject ownedTarget = currentTarget.GetComponent<IOwnedObject>();
 
-        if (targetUnit == null || targetUnit.Health.Value <= 0f)
+        if (damageableTarget == null || ownedTarget == null)
+        {
+            currentTarget = null;
+            return;
+        }
+
+        if (IsTargetInvalidOrDead())
         {
             currentTarget = null;
 
@@ -111,14 +124,15 @@ public class UnitCombat : NetworkBehaviour
 
         Weapon weapon = data.Weapons[0];
 
-        float distance = Vector3.Distance(transform.position, targetUnit.transform.position);
+        Vector3 targetPosition = currentTarget.transform.position;
+        float distance = Vector3.Distance(transform.position, targetPosition);
 
         if (distance > weapon.Range)
             return;
 
         Transform aimTransform = GetAimTransform();
 
-        Vector3 direction = targetUnit.transform.position - aimTransform.position;
+        Vector3 direction = targetPosition - aimTransform.position;
         direction.y = 0f;
 
         if (direction.sqrMagnitude < 0.01f)
@@ -141,7 +155,7 @@ public class UnitCombat : NetworkBehaviour
         {
             // Rotira celo telo tenka preko UnitMovement.
             if (movement != null)
-                movement.ServerSetCombatLookTarget(targetUnit.transform.position);
+                movement.ServerSetCombatLookTarget(targetPosition);
         }
 
         float angle = Vector3.Angle(aimTransform.forward, normalizedDirection);
@@ -154,7 +168,7 @@ public class UnitCombat : NetworkBehaviour
 
         nextFireTime = Time.time + 1f / weapon.FireRate;
 
-        FireProjectile(targetUnit, weapon);
+        FireProjectile(currentTarget, weapon);
     }
 
     private void TryAutoAcquireTarget()
@@ -175,37 +189,61 @@ public class UnitCombat : NetworkBehaviour
 
         Weapon weapon = data.Weapons[0];
 
-        Unit bestTarget = null;
+        NetworkObject bestTarget = null;
         float bestDistanceSqr = weapon.Range * weapon.Range;
 
-        foreach (GameObject unitObj in UnitManager.instance.AllUnitsList)
+        // Check enemy units
+        if (UnitManager.instance != null)
         {
-            if (unitObj == null || unitObj == gameObject)
-                continue;
-
-            Unit possibleTarget = unitObj.GetComponent<Unit>();
-
-            if (possibleTarget == null)
-                continue;
-
-            if (possibleTarget.Health.Value <= 0f)
-                continue;
-
-            if (possibleTarget.PlayerClientId.Value == unit.PlayerClientId.Value)
-                continue;
-
-            float distanceSqr = (possibleTarget.transform.position - transform.position).sqrMagnitude;
-
-            if (distanceSqr <= bestDistanceSqr)
+            foreach (GameObject unitObj in UnitManager.instance.AllUnitsList)
             {
-                bestDistanceSqr = distanceSqr;
-                bestTarget = possibleTarget;
+                TryConsiderAutoAggroTarget(unitObj, ref bestTarget, ref bestDistanceSqr);
+            }
+        }
+
+        // Check enemy buildings
+        if (BuildingManager.instance != null)
+        {
+            foreach (GameObject buildingObj in BuildingManager.instance.AllBuildingsList)
+            {
+                TryConsiderAutoAggroTarget(buildingObj, ref bestTarget, ref bestDistanceSqr);
             }
         }
 
         if (bestTarget != null)
         {
-            currentTarget = bestTarget.NetworkObject;
+            currentTarget = bestTarget;
+        }
+    }
+
+    private void TryConsiderAutoAggroTarget(
+        GameObject targetObj,
+        ref NetworkObject bestTarget,
+        ref float bestDistanceSqr)
+    {
+        if (targetObj == null || targetObj == gameObject)
+            return;
+
+        NetworkObject targetNetworkObject = targetObj.GetComponent<NetworkObject>();
+        IOwnedObject ownedTarget = targetObj.GetComponent<IOwnedObject>();
+        IDamageable damageableTarget = targetObj.GetComponent<IDamageable>();
+
+        if (targetNetworkObject == null || ownedTarget == null || damageableTarget == null)
+            return;
+
+        // Ignore friendly targets
+        if (ownedTarget.OwnerClientId == unit.PlayerClientId.Value)
+            return;
+
+        if (IsTargetDead(targetNetworkObject))
+            return;
+
+        float distanceSqr = (targetObj.transform.position - transform.position).sqrMagnitude;
+
+        if (distanceSqr <= bestDistanceSqr)
+        {
+            bestDistanceSqr = distanceSqr;
+            bestTarget = targetNetworkObject;
         }
     }
 
@@ -252,12 +290,12 @@ public class UnitCombat : NetworkBehaviour
         return direction;
     }
 
-    private void FireProjectile(Unit targetUnit, Weapon weapon)
+    private void FireProjectile(NetworkObject targetObject, Weapon weapon)
     {
         if (!IsServer)
             return;
 
-        if (targetUnit == null)
+        if (targetObject == null)
             return;
 
         Transform barrel = GetBarrel();
@@ -265,17 +303,11 @@ public class UnitCombat : NetworkBehaviour
         if (barrel == null)
             return;
 
-        Vector3 aimPoint = targetUnit.transform.position + Vector3.up * 1.2f;
+        Vector3 aimPoint = targetObject.transform.position + Vector3.up * 1.2f;
         Vector3 direction = aimPoint - barrel.position;
 
         if (direction.sqrMagnitude < 0.01f)
             return;
-
-        if (ServerProjectileSystem.Instance == null)
-        {
-            Debug.LogError("ServerProjectileSystem ne postoji u sceni.");
-            return;
-        }
 
         ServerProjectileSystem.Instance.ServerFireProjectile(
             unit,
@@ -283,5 +315,29 @@ public class UnitCombat : NetworkBehaviour
             direction.normalized,
             weapon
         );
+    }
+
+    private bool IsTargetInvalidOrDead()
+    {
+        if (currentTarget == null)
+            return true;
+
+        if (!currentTarget.IsSpawned)
+            return true;
+
+        return IsTargetDead(currentTarget);
+    }
+
+    private bool IsTargetDead(NetworkObject target)
+    {
+        Unit targetUnit = target.GetComponent<Unit>();
+        if (targetUnit != null)
+            return targetUnit.Health.Value <= 0f;
+
+        Building targetBuilding = target.GetComponent<Building>();
+        if (targetBuilding != null)
+            return targetBuilding.Health.Value <= 0f;
+
+        return true;
     }
 }

@@ -1,0 +1,18 @@
+using System.Collections.Generic;
+using UnityEngine;
+
+public class BuildingData : MonoBehaviour
+{
+    [Header("General")]
+    public string BuildingId = "komandni_centar";
+    public string DisplayName = "Komandni Centar";
+
+    [Header("Health")]
+    public float MaxHealth = 1000f;
+    public float Armor = 20f;
+
+    [Header("Production")]
+    public bool CanBuildUnits = true;
+
+    public List<BuildableUnit> BuildableUnits = new List<BuildableUnit>();
+}

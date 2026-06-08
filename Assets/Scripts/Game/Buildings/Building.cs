@@ -1,22 +1,15 @@
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
-public class Unit : NetworkBehaviour, ISelectableObject, IDamageable, IOwnedObject
+public class Building : NetworkBehaviour, ISelectableObject, IDamageable, IOwnedObject
 {
-    public bool Selected => UnitManager.instance != null &&
-                            UnitManager.instance.SelectedUnits.Contains(gameObject);
+    public bool Selected => BuildingManager.instance != null &&
+                            BuildingManager.instance.SelectedBuildings.Contains(gameObject);
 
     [SerializeField] private GameObject _markerObject;
-    [SerializeField] private List<Transform> _barrels = new List<Transform>();
-    [SerializeField] private Transform _gunPivot;
 
     public ulong OwnerClientId => PlayerClientId.Value;
-    public Transform GunPivot => _gunPivot;
-    public IReadOnlyList<Transform> Barrels => _barrels;
-
-
-    public UnitData Data { get; private set; }
+    public BuildingData Data { get; private set; }
 
     public NetworkVariable<ulong> PlayerClientId = new NetworkVariable<ulong>(
         0,
@@ -36,17 +29,21 @@ public class Unit : NetworkBehaviour, ISelectableObject, IDamageable, IOwnedObje
         NetworkVariableWritePermission.Server
     );
 
-
-
     private void Awake()
     {
-        Data = GetComponent<UnitData>();
+        Data = GetComponent<BuildingData>();
     }
 
     public override void OnNetworkSpawn()
     {
         if (Data == null)
-            Data = GetComponent<UnitData>();
+            Data = GetComponent<BuildingData>();
+
+        if (Data == null)
+        {
+            Debug.LogError($"{gameObject.name} nema BuildingData.");
+            return;
+        }
 
         if (IsServer)
         {
@@ -54,18 +51,18 @@ public class Unit : NetworkBehaviour, ISelectableObject, IDamageable, IOwnedObje
             Health.Value = Data.MaxHealth;
         }
 
-        if (UnitManager.instance != null)
+        if (BuildingManager.instance != null)
         {
-            UnitManager.instance.AllUnitsList.Add(gameObject);
+            BuildingManager.instance.AllBuildingsList.Add(gameObject);
         }
     }
 
     public override void OnNetworkDespawn()
     {
-        if (UnitManager.instance != null)
+        if (BuildingManager.instance != null)
         {
-            UnitManager.instance.AllUnitsList.Remove(gameObject);
-            UnitManager.instance.SelectedUnits.Remove(gameObject);
+            BuildingManager.instance.AllBuildingsList.Remove(gameObject);
+            BuildingManager.instance.SelectedBuildings.Remove(gameObject);
         }
     }
 
@@ -87,13 +84,6 @@ public class Unit : NetworkBehaviour, ISelectableObject, IDamageable, IOwnedObje
 
         Health.Value = Mathf.Max(0f, Health.Value - reducedDamage);
 
-        UnitCombat combat = GetComponent<UnitCombat>();
-
-        if (combat != null && attacker != null && attacker != this)
-        {
-            combat.ServerAggroOn(attacker);
-        }
-
         if (Health.Value <= 0f)
         {
             Die();
@@ -108,15 +98,15 @@ public class Unit : NetworkBehaviour, ISelectableObject, IDamageable, IOwnedObje
         NetworkObject.Despawn(true);
     }
 
-    public void DeSelect()
-    {
-        if (_markerObject != null)
-            _markerObject.SetActive(false);
-    }
-
     public void Select()
     {
         if (_markerObject != null)
             _markerObject.SetActive(true);
+    }
+
+    public void DeSelect()
+    {
+        if (_markerObject != null)
+            _markerObject.SetActive(false);
     }
 }

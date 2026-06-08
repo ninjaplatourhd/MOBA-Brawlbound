@@ -59,6 +59,22 @@ public class UnitManager : MonoBehaviour
                         SelectUnit(hit.collider.gameObject);
                     }
                 }
+                else
+                {
+                    Building building = hit.collider.GetComponentInParent<Building>();
+
+                    if (building != null && building.BelongsToLocalPlayer())
+                    {
+                        DeSelectAll();
+
+                        if (BuildingManager.instance != null)
+                        {
+                            BuildingManager.instance.SelectBuilding(building.gameObject);
+                        }
+
+                        return;
+                    }
+                }
 
             }
             else
@@ -72,15 +88,13 @@ public class UnitManager : MonoBehaviour
         {
             Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
 
-            if (Physics.Raycast(ray, out RaycastHit unitHit, Mathf.Infinity, _clickable))
+            if (Physics.Raycast(ray, out RaycastHit targetHit, Mathf.Infinity, _clickable))
             {
-                Unit clickedUnit = unitHit.collider.GetComponentInParent<Unit>();
-
-                if (clickedUnit != null)
+                if (TryGetOwnedObjectFromHit(targetHit, out GameObject targetObject, out IOwnedObject ownedObject))
                 {
-                    if (!clickedUnit.BelongsToLocalPlayer())
+                    if (!ownedObject.BelongsToLocalPlayer())
                     {
-                        AttackSelectedUnits(clickedUnit);
+                        AttackSelectedUnits(targetObject);
                         return;
                     }
                 }
@@ -164,12 +178,9 @@ public class UnitManager : MonoBehaviour
         return positionCenter;
     }
 
-    private void AttackSelectedUnits(Unit targetUnit)
+    private void AttackSelectedUnits(GameObject targetObject)
     {
-        if (targetUnit == null)
-            return;
-
-        if (SelectedUnits.Count == 0)
+        if (targetObject == null)
             return;
 
         foreach (GameObject unitObj in SelectedUnits)
@@ -179,15 +190,36 @@ public class UnitManager : MonoBehaviour
 
             if (unitObj.TryGetComponent<UnitCombat>(out UnitCombat combat))
             {
-                combat.RequestAttack(targetUnit);
-            }
-            else
-            {
-                Debug.LogWarning($"{unitObj.name} nema UnitCombat komponentu.");
+                combat.RequestAttack(targetObject);
             }
         }
     }
 
+    private bool TryGetOwnedObjectFromHit(RaycastHit hit, out GameObject targetObject, out IOwnedObject ownedObject)
+    {
+        targetObject = null;
+        ownedObject = null;
+
+        Unit unit = hit.collider.GetComponentInParent<Unit>();
+
+        if (unit != null)
+        {
+            targetObject = unit.gameObject;
+            ownedObject = unit;
+            return true;
+        }
+
+        Building building = hit.collider.GetComponentInParent<Building>();
+
+        if (building != null)
+        {
+            targetObject = building.gameObject;
+            ownedObject = building;
+            return true;
+        }
+
+        return false;
+    }
     private void MoveSelectedUnits(Vector3 targetPoint)
     {
         if (SelectedUnits.Count == 0)

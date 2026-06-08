@@ -34,7 +34,7 @@ public class ProjectileVisual : MonoBehaviour
     {
         transform.position = impactPosition;
 
-        // Kasnije ovde možeš spawnovati mali hit particle.
+        // TODO: Hit particle
         Destroy(gameObject);
     }
 }
