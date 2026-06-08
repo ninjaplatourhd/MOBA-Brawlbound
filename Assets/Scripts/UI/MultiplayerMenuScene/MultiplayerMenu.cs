@@ -1,3 +1,5 @@
+using System;
+using System.Threading.Tasks;
 using TMPro;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
@@ -6,22 +8,32 @@ using Unity.Services.Lobbies.Models;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class MultiplayerMenu : MonoBehaviour
 {
 
-    [SerializeField]
-    private Transform lobbyContainer;
+    [Header("Lobby List")]
+    [SerializeField] private Transform lobbyContainer;
+    [SerializeField] private GameObject lobbyPreviewPrefab;
 
-    [SerializeField]
-    private GameObject lobbyPreviewPrefab;
 
-    [SerializeField]
-    private TMP_InputField lobbyNameText;
+    [Header("Create Lobby")]
+    [SerializeField] private TMP_InputField lobbyNameText;
+    [SerializeField] private TMP_InputField lobbyPasswordText;
+    [SerializeField] private TMP_InputField playerNameText;
+    [SerializeField] private Button lobbyCreateSceneBtn;
 
-    [SerializeField]
-    private Button lobbyCreateSceneBtn;
+    [Header("Password Modal")]
+    [SerializeField] private GameObject passwordModalPanel;
+    [SerializeField] private TMP_Text passwordModalTitleText;
+    [SerializeField] private TMP_InputField joinPasswordInput;
+    [SerializeField] private Button passwordModalJoinButton;
+    [SerializeField] private Button passwordModalCancelButton;
 
+    private Lobby selectedLobbyForJoin;
+    private bool isRefreshingLobbies;
+    private float lobbyRefreshTimer = 50f;
 
     private async void Start()
     {
@@ -34,32 +46,49 @@ public class MultiplayerMenu : MonoBehaviour
 
         Debug.Log("Signed in " + AuthenticationService.Instance.PlayerId);
 
-        ListLobbies();
+        if (passwordModalPanel != null)
+            passwordModalPanel.SetActive(false);
+
+        lobbyRefreshTimer = 0f;
+
+        await ListLobbies();
     }
 
     private void Awake()
     {
-        lobbyCreateSceneBtn.onClick.AddListener(() => CreateLobbyScene());
+        lobbyCreateSceneBtn.onClick.AddListener(CreateLobbyScene);
+
+        if (passwordModalJoinButton != null)
+            passwordModalJoinButton.onClick.AddListener(JoinPasswordLobbyFromModal);
+
+        if (passwordModalCancelButton != null)
+            passwordModalCancelButton.onClick.AddListener(ClosePasswordModal);
     }
 
-    private float lobbyRefreshTimer = 50;
-    public void Update()
+    private void Update()
     {
-        if (lobbyRefreshTimer >= 5)
-        {
-            ListLobbies();
-            lobbyRefreshTimer = 0;
-        }
+        if (!AuthenticationService.Instance.IsSignedIn)
+            return;
+
         lobbyRefreshTimer += Time.deltaTime;
+
+        if (lobbyRefreshTimer >= 5f)
+        {
+            lobbyRefreshTimer = 0f;
+            _ = ListLobbies();
+        }
     }
 
-
-    private async void ListLobbies()
+    private async Task ListLobbies()
     {
+        if (isRefreshingLobbies)
+            return;
+
+        isRefreshingLobbies = true;
+
         try
         {
             QueryResponse queryResponse = await LobbyService.Instance.QueryLobbiesAsync();
-            Debug.Log($"Lobbies found: {queryResponse.Results.Count}");
 
             foreach (Transform child in lobbyContainer)
             {
@@ -68,28 +97,134 @@ public class MultiplayerMenu : MonoBehaviour
 
             foreach (Lobby lobby in queryResponse.Results)
             {
-                Debug.Log($"{lobby.Name} {lobby.MaxPlayers}");
-
                 GameObject instance = Instantiate(lobbyPreviewPrefab, lobbyContainer);
 
                 LobbyPreviewLogic lobbyPreviewLogic = instance.GetComponent<LobbyPreviewLogic>();
-                lobbyPreviewLogic.LoadLobbyData(lobby);
-
+                lobbyPreviewLogic.LoadLobbyData(lobby, this);
             }
+
+            Debug.Log($"Lobbies found: {queryResponse.Results.Count}");
         }
         catch (LobbyServiceException e)
         {
-            Debug.Log(e);
+            Debug.LogWarning("Lobby query failed: " + e);
         }
+        catch (Exception e)
+        {
+            Debug.LogWarning("Unexpected lobby query error: " + e);
+        }
+        finally
+        {
+            isRefreshingLobbies = false;
+        }
+    }
+
+    public void TryJoinLobby(Lobby lobby)
+    {
+        if (lobby == null)
+            return;
+
+        selectedLobbyForJoin = lobby;
+
+        if (lobby.HasPassword)
+        {
+            OpenPasswordModal(lobby);
+            return;
+        }
+
+        JoinLobbyScene(lobby, "");
+    }
+
+    private void OpenPasswordModal(Lobby lobby)
+    {
+        if (passwordModalPanel == null)
+        {
+            Debug.LogError("Password modal panel nije povezan.");
+            return;
+        }
+
+        passwordModalPanel.SetActive(true);
+
+        if (passwordModalTitleText != null)
+            passwordModalTitleText.text = $"Enter password for {lobby.Name}";
+
+        if (joinPasswordInput != null)
+            joinPasswordInput.text = "";
+    }
+
+    private void ClosePasswordModal()
+    {
+        selectedLobbyForJoin = null;
+
+        if (passwordModalPanel != null)
+            passwordModalPanel.SetActive(false);
+    }
+
+    private void JoinPasswordLobbyFromModal()
+    {
+        if (selectedLobbyForJoin == null)
+            return;
+
+        string password = joinPasswordInput != null
+            ? joinPasswordInput.text.Trim()
+            : "";
+
+        JoinLobbyScene(selectedLobbyForJoin, password);
+    }
+
+    private void JoinLobbyScene(Lobby lobby, string password)
+    {
+        LobbyManager.Instance.LobbyName = lobby.Name;
+        LobbyManager.Instance.LobbyID = lobby.Id;
+        LobbyManager.Instance.LobbyCode = lobby.LobbyCode;
+        LobbyManager.Instance.Password = password;
+
+        LobbyManager.Instance.IsOwner = false;
+        LobbyManager.Instance.PlayerName = GetPlayerName();
+
+        LobbyManager.Instance.Team = "1";
+        LobbyManager.Instance.Color = "Blue";
+        LobbyManager.Instance.Ready = false;
+
+        SceneManager.LoadScene("GameLobby");
     }
 
     private void CreateLobbyScene()
     {
-        LobbyManager.Instance.LobbyName = lobbyNameText.text;
+        string lobbyName = string.IsNullOrWhiteSpace(lobbyNameText.text)
+            ? "New Lobby"
+            : lobbyNameText.text.Trim();
+
+        string password = lobbyPasswordText != null
+            ? lobbyPasswordText.text.Trim()
+            : "";
+
+        if (!string.IsNullOrWhiteSpace(password) && password.Length < 8)
+        {
+            Debug.LogWarning("Password mora imati bar 8 karaktera ili ostavi prazno.");
+            return;
+        }
+
+        LobbyManager.Instance.LobbyName = lobbyName;
+        LobbyManager.Instance.Password = password;
+
         LobbyManager.Instance.IsOwner = true;
-        LobbyManager.Instance.PlayerName = "Player" + Random.Range(1, 1000);
-        SceneManager.LoadScene(sceneName: "GameLobby");
+        LobbyManager.Instance.PlayerName = GetPlayerName();
+
+        LobbyManager.Instance.Team = "1";
+        LobbyManager.Instance.Color = "Blue";
+        LobbyManager.Instance.Ready = false;
+
+        SceneManager.LoadScene("GameLobby");
     }
 
+    private string GetPlayerName()
+    {
+        if (playerNameText != null && !string.IsNullOrWhiteSpace(playerNameText.text))
+        {
+            return playerNameText.text.Trim();
+        }
 
+        return "Player" + Random.Range(1, 1000);
+    }
 }
