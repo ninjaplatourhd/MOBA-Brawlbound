@@ -140,15 +140,26 @@ public class UnitManager : MonoBehaviour
         SelectedUnits.Clear();
     }
 
-    public void SelectUnit(GameObject unit)
+    //public void SelectUnit(GameObject unit)
+    //{
+    //    if (Input.GetKey(KeyCode.LeftControl) == false)
+    //        DeSelectAll();
+    //    SelectedUnits.Add(unit);
+    //    if (unit.TryGetComponent<ISelectableObject>(out ISelectableObject selectable))
+    //    {
+    //        selectable.Select();
+    //    }
+    //}
+
+    public void SelectUnit(GameObject unit, bool additive = false)
     {
-        if (Input.GetKey(KeyCode.LeftControl) == false)
+        if (!additive)
             DeSelectAll();
+
         SelectedUnits.Add(unit);
+
         if (unit.TryGetComponent<ISelectableObject>(out ISelectableObject selectable))
-        {
             selectable.Select();
-        }
     }
 
     public void SelectUnits(List<GameObject> units)
