@@ -81,7 +81,8 @@ public class UnitManager : MonoBehaviour
             {
 
                 DeSelectAll();
-
+                BuildingManager.instance.DeSelectAll();
+                IngameConsole.print(SelectedUnits.Count);
             }
         }
         else if (Input.GetMouseButtonDown(1))

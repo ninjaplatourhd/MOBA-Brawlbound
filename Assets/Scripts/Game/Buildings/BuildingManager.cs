@@ -21,6 +21,7 @@ public class BuildingManager : MonoBehaviour
 
     public void SelectBuilding(GameObject building)
     {
+        IngameConsole.print("Selektovan building");
         DeSelectAll();
 
         SelectedBuildings.Add(building);

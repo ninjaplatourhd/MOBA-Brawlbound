@@ -30,11 +30,6 @@ public class ProductionBuilding : NetworkBehaviour
         if (!IsServer)
             return;
 
-        if (Input.GetKeyDown(KeyCode.B) && building.BelongsToLocalPlayer())
-        {
-            RequestBuildUnit("worker");
-        }
-
         ServerUpdateQueue();
     }
 
