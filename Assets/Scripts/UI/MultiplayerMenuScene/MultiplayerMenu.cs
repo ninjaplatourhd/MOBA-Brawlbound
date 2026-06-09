@@ -12,11 +12,9 @@ using Random = UnityEngine.Random;
 
 public class MultiplayerMenu : MonoBehaviour
 {
-
     [Header("Lobby List")]
     [SerializeField] private Transform lobbyContainer;
     [SerializeField] private GameObject lobbyPreviewPrefab;
-
 
     [Header("Create Lobby")]
     [SerializeField] private TMP_InputField lobbyNameText;
@@ -33,7 +31,7 @@ public class MultiplayerMenu : MonoBehaviour
 
     private Lobby selectedLobbyForJoin;
     private bool isRefreshingLobbies;
-    private float lobbyRefreshTimer = 50f;
+    private float lobbyRefreshTimer = 0f;
 
     private async void Start()
     {
@@ -49,13 +47,20 @@ public class MultiplayerMenu : MonoBehaviour
         if (passwordModalPanel != null)
             passwordModalPanel.SetActive(false);
 
-        lobbyRefreshTimer = 0f;
-
         await ListLobbies();
     }
 
     private void Awake()
     {
+        Debug.Log("MultiplayerMenu Awake");
+
+        if (lobbyCreateSceneBtn == null)
+        {
+            Debug.LogError("Lobby Create Scene Button nije povezan u Inspectoru.");
+            return;
+        }
+
+        lobbyCreateSceneBtn.onClick.RemoveAllListeners();
         lobbyCreateSceneBtn.onClick.AddListener(CreateLobbyScene);
 
         if (passwordModalJoinButton != null)
@@ -100,7 +105,15 @@ public class MultiplayerMenu : MonoBehaviour
                 GameObject instance = Instantiate(lobbyPreviewPrefab, lobbyContainer);
 
                 LobbyPreviewLogic lobbyPreviewLogic = instance.GetComponent<LobbyPreviewLogic>();
-                lobbyPreviewLogic.LoadLobbyData(lobby, this);
+
+                if (lobbyPreviewLogic != null)
+                {
+                    lobbyPreviewLogic.LoadLobbyData(lobby, this);
+                }
+                else
+                {
+                    Debug.LogError("LobbyPreviewPrefab nema LobbyPreviewLogic komponentu.");
+                }
             }
 
             Debug.Log($"Lobbies found: {queryResponse.Results.Count}");
@@ -118,6 +131,27 @@ public class MultiplayerMenu : MonoBehaviour
             isRefreshingLobbies = false;
         }
     }
+    private bool LobbyHasCustomPassword(Lobby lobby)
+    {
+        if (lobby.Data == null)
+            return false;
+
+        if (!lobby.Data.ContainsKey("HasPassword"))
+            return false;
+
+        return lobby.Data["HasPassword"].Value == "true";
+    }
+
+    private bool IsCorrectCustomPassword(Lobby lobby, string password)
+    {
+        if (!LobbyHasCustomPassword(lobby))
+            return true;
+
+        if (lobby.Data == null || !lobby.Data.ContainsKey("Password"))
+            return false;
+
+        return lobby.Data["Password"].Value == password;
+    }
 
     public void TryJoinLobby(Lobby lobby)
     {
@@ -126,7 +160,7 @@ public class MultiplayerMenu : MonoBehaviour
 
         selectedLobbyForJoin = lobby;
 
-        if (lobby.HasPassword)
+        if (LobbyHasCustomPassword(lobby))
         {
             OpenPasswordModal(lobby);
             return;
@@ -169,6 +203,12 @@ public class MultiplayerMenu : MonoBehaviour
             ? joinPasswordInput.text.Trim()
             : "";
 
+        if (!IsCorrectCustomPassword(selectedLobbyForJoin, password))
+        {
+            Debug.LogWarning("Pogrešan password.");
+            return;
+        }
+
         JoinLobbyScene(selectedLobbyForJoin, password);
     }
 
@@ -182,7 +222,7 @@ public class MultiplayerMenu : MonoBehaviour
         LobbyManager.Instance.IsOwner = false;
         LobbyManager.Instance.PlayerName = GetPlayerName();
 
-        LobbyManager.Instance.Team = "1";
+        LobbyManager.Instance.Team = "Team 1";
         LobbyManager.Instance.Color = "Blue";
         LobbyManager.Instance.Ready = false;
 
@@ -191,6 +231,14 @@ public class MultiplayerMenu : MonoBehaviour
 
     private void CreateLobbyScene()
     {
+        Debug.Log("Create Lobby button clicked.");
+
+        if (LobbyManager.Instance == null)
+        {
+            Debug.LogError("LobbyManager.Instance je null. Da li LobbyManager postoji u sceni?");
+            return;
+        }
+
         string lobbyName = string.IsNullOrWhiteSpace(lobbyNameText.text)
             ? "New Lobby"
             : lobbyNameText.text.Trim();
@@ -199,9 +247,12 @@ public class MultiplayerMenu : MonoBehaviour
             ? lobbyPasswordText.text.Trim()
             : "";
 
-        if (!string.IsNullOrWhiteSpace(password) && password.Length < 8)
+        Debug.Log($"Lobby name: {lobbyName}");
+        Debug.Log($"Password length: {password.Length}");
+
+        if (!string.IsNullOrWhiteSpace(password) && password.Length < 3)
         {
-            Debug.LogWarning("Password mora imati bar 8 karaktera ili ostavi prazno.");
+            Debug.LogWarning("Password mora imati bar 3 karaktera ili ostavi prazno.");
             return;
         }
 
@@ -211,9 +262,11 @@ public class MultiplayerMenu : MonoBehaviour
         LobbyManager.Instance.IsOwner = true;
         LobbyManager.Instance.PlayerName = GetPlayerName();
 
-        LobbyManager.Instance.Team = "1";
+        LobbyManager.Instance.Team = "Team 1";
         LobbyManager.Instance.Color = "Blue";
         LobbyManager.Instance.Ready = false;
+
+        Debug.Log("Loading GameLobby scene...");
 
         SceneManager.LoadScene("GameLobby");
     }

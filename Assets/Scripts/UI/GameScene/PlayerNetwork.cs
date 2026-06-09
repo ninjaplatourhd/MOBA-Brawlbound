@@ -9,19 +9,25 @@ public class PlayerNetwork : NetworkBehaviour
     private bool isMoving = false;
     private Camera mainCamera;
 
-    void Start()
+    private void Start()
     {
-        if (!IsOwner)
-            return;
-
         mainCamera = Camera.main;
-        targetPosition = transform.position;
     }
 
-    void Update()
+    private void Update()
     {
         if (!IsOwner)
             return;
+
+        if (mainCamera == null)
+        {
+            mainCamera = Camera.main;
+
+            if (mainCamera == null)
+                return;
+        }
+
+
 
         if (Input.GetMouseButtonDown(1))
         {

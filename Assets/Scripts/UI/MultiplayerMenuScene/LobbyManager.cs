@@ -14,7 +14,7 @@ public class LobbyManager : MonoBehaviour
     public int MaxPlayers = 4;
     public bool IsOwner;
 
-    public string Team = "1";
+    public string Team = "Team 1";
     public string Color = "Blue";
     public bool Ready = false;
 

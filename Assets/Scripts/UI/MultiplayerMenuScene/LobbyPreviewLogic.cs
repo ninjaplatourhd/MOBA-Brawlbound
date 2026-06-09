@@ -39,16 +39,12 @@ public class LobbyPreviewLogic : MonoBehaviour
         lobbyId = lobby.Id;
         ownerNameText.text = "Test";
         playerCountText.text = $"{lobby.Players.Count}/{lobby.MaxPlayers}";
-        if (lobby.HasPassword)
-        {
-            lockStatusText.text = "Locked";
-            lockStatusText.color = Color.red;
-        }
-        else
-        {
-            lockStatusText.text = "Open";
-            lockStatusText.color = Color.green;
-        }
+        bool hasCustomPassword =
+        lobby.Data != null &&
+        lobby.Data.ContainsKey("HasPassword") &&
+        lobby.Data["HasPassword"].Value == "true";
+
+        lockStatusText.text = hasCustomPassword ? "Locked" : "Open";
         lobbyNameText.text = lobby.Name;
     }
 
