@@ -106,14 +106,6 @@ public class UnitSelection : MonoBehaviour
 
         else if (Input.GetMouseButtonUp(0))
         {
-            //if (InputBlocker.IsPointerOverUI())
-            //{
-            //    _isDragging = false;
-            //    _selectionArea.SetActive(false);
-            //    return;
-            //}
-
-            //hard code ako bloker skript ne bude radio
             if (MouseStartedOnUI)
             {
                 _isDragging = false;

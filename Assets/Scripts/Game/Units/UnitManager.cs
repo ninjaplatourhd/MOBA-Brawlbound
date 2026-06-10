@@ -23,6 +23,10 @@ public class UnitManager : MonoBehaviour
 
     public GameObject groundMarker;
 
+    // upravljanje dugmadima za jedinice, da li su u move, attack ili patrol modu
+    public CommandMode CurrentCommandMode = CommandMode.None;
+    private bool _patrolMode;
+    private Vector3 _patrolA;
 
     private void Awake()
     {
@@ -47,6 +51,7 @@ public class UnitManager : MonoBehaviour
         if (InputBlocker.IsPointerOverUI())
             return;
 
+        // selecting units
         if (Input.GetMouseButtonDown(0))
         {
             RaycastHit hit;
@@ -91,6 +96,11 @@ public class UnitManager : MonoBehaviour
         {
             Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
 
+            if (UnityEngine.EventSystems.EventSystem.current != null && UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
+                return;
+            }
+
             if (Physics.Raycast(ray, out RaycastHit targetHit, Mathf.Infinity, _clickable))
             {
                 if (TryGetOwnedObjectFromHit(targetHit, out GameObject targetObject, out IOwnedObject ownedObject))
@@ -105,6 +115,12 @@ public class UnitManager : MonoBehaviour
 
             if (Physics.Raycast(ray, out RaycastHit groundHit, Mathf.Infinity, _ground))
             {
+                if (_patrolMode)
+                {
+                    HandlePatrolClick(groundHit.point);
+                    return;
+                }
+
                 MoveSelectedUnits(groundHit.point);
             }
         }
@@ -192,7 +208,8 @@ public class UnitManager : MonoBehaviour
         return positionCenter;
     }
 
-    private void AttackSelectedUnits(GameObject targetObject)
+    // prebacio sam u public da mogu da pozovem preko dugmadi /Savo
+    public void AttackSelectedUnits(GameObject targetObject)
     {
         if (targetObject == null)
             return;
@@ -234,7 +251,9 @@ public class UnitManager : MonoBehaviour
 
         return false;
     }
-    private void MoveSelectedUnits(Vector3 targetPoint)
+
+    // prebacio sam u public da mogu da pozovem preko dugmadi /Savo
+    public void MoveSelectedUnits(Vector3 targetPoint)
     {
         if (SelectedUnits.Count == 0)
             return;
@@ -254,4 +273,35 @@ public class UnitManager : MonoBehaviour
             }
         }
     }
+
+    // Patrol hadle za klik /Savo
+    private void HandlePatrolClick(Vector3 point)
+    {
+        if (!_patrolMode)
+            return;
+
+        if (_patrolA == Vector3.zero)
+        {
+            _patrolA = point;
+            IngameConsole.print("Patrol Point A set");
+            return;
+        }
+
+        foreach (var unitObj in SelectedUnits)
+        {
+            if (unitObj.TryGetComponent<UnitMovement>(out UnitMovement movement))
+            {
+                movement.RequestPatrol(_patrolA, point);
+            }
+        }
+
+        _patrolMode = false;
+        _patrolA = Vector3.zero;
+    }
+
+    public void EnablePatrolMode()
+    {
+        _patrolMode = true;
+    }
+
 }

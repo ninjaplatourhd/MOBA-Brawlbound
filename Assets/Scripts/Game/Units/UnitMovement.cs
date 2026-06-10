@@ -21,6 +21,12 @@ public class UnitMovement : NetworkBehaviour
     // 36 stepeni znači otprilike "80% okrenut".
     [SerializeField] private float startMovingAngle = 36f;
 
+    // Patroling
+    private bool _hasPatrol;
+    private Vector3 _patrolPointA;
+    private Vector3 _patrolPointB;
+    private bool _goingToB;
+
     private void Start()
     {
         _agent = GetComponent<NavMeshAgent>();
@@ -88,6 +94,24 @@ public class UnitMovement : NetworkBehaviour
         {
             _hasMoveTarget = false;
             _agent.speed = 0f;
+        }
+
+        // Patroling logic
+        if (_hasPatrol && _agent.enabled && _agent.isOnNavMesh && !_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance + 0.2f)
+        {
+            if (_goingToB)
+            {
+                _goingToB = false;
+                _targetLocation = _patrolPointA;
+            }
+            else
+            {
+                _goingToB = true;
+                _targetLocation = _patrolPointB;
+            }
+
+            _agent.SetDestination(_targetLocation);
+            _hasMoveTarget = true;
         }
     }
 
@@ -183,7 +207,7 @@ public class UnitMovement : NetworkBehaviour
         _targetLocation = targetPosition;
         _hasMoveTarget = true;
 
-
+        _hasPatrol = false;
         _hasCombatLookTarget = false;
 
         if (_agent.enabled)
@@ -191,6 +215,8 @@ public class UnitMovement : NetworkBehaviour
             _agent.isStopped = false;
             _agent.SetDestination(_targetLocation);
         }
+
+
     }
 
     public void ServerSetCombatLookTarget(Vector3 targetPosition)
@@ -209,4 +235,102 @@ public class UnitMovement : NetworkBehaviour
 
         _hasCombatLookTarget = false;
     }
+
+    // Dodao opciju za "patroliranje"/Savo
+    public void RequestPatrol(Vector3 pointA, Vector3 pointB)
+    {
+        if (_unit == null)
+            _unit = GetComponent<Unit>();
+
+        if (!_unit.BelongsToLocalPlayer())
+            return;
+
+        PatrolServerRpc(pointA, pointB);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void PatrolServerRpc(Vector3 pointA, Vector3 pointB, ServerRpcParams rpcParams = default)
+    {
+        ulong senderClientId = rpcParams.Receive.SenderClientId;
+
+        if (_unit.PlayerClientId.Value != senderClientId)
+            return;
+
+        UnitCombat combat = GetComponent<UnitCombat>();
+        if (combat != null)
+        {
+            combat.ServerClearAttackTarget();
+        }
+
+        _patrolPointA = pointA;
+        _patrolPointB = pointB;
+        _goingToB = true;
+        _hasPatrol = true;
+
+        _targetLocation = pointB;
+        _hasMoveTarget = true;
+
+        if (_agent.enabled)
+        {
+            _agent.isStopped = false;
+            _agent.SetDestination(_targetLocation);
+        }
+    }
+
+    public void ServerClearPatrol()
+    {
+        if (!IsServer)
+            return;
+
+        _hasPatrol = false;
+        _goingToB = false;
+
+        _patrolPointA = Vector3.zero;
+        _patrolPointB = Vector3.zero;
+    }
+
+    //Dodao sam stop opcije/Savo
+    public void RequestStop()
+    {
+        if (_unit == null)
+            _unit = GetComponent<Unit>();
+
+        if (!_unit.BelongsToLocalPlayer())
+            return;
+
+        StopServerRpc();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void StopServerRpc(ServerRpcParams rpcParams = default)
+    {
+        ulong senderClientId = rpcParams.Receive.SenderClientId;
+
+        if (_unit.PlayerClientId.Value != senderClientId)
+            return;
+
+        // stop movement
+        _hasMoveTarget = false;
+        _targetLocation = transform.position;
+
+        if (_agent != null && _agent.enabled)
+        {
+            _agent.isStopped = true;
+            _agent.ResetPath();
+            _agent.speed = 0f;
+        }
+
+        // stop combat behavior
+        UnitCombat combat = GetComponent<UnitCombat>();
+        if (combat != null)
+        {
+            combat.ServerClearAttackTarget();
+        }
+
+        _hasCombatLookTarget = false;
+
+        // stop patrol
+        ServerClearPatrol();
+    }
 }
+

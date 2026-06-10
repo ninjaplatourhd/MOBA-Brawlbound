@@ -85,6 +85,13 @@ public class UnitCombat : NetworkBehaviour
         if (ownedTarget.OwnerClientId == senderClientId)
             return;
 
+        // Postavi novi target i obustavi patroliranje ako je bilo.
+        UnitMovement movement = GetComponent<UnitMovement>();
+        if (movement != null)
+        {
+            movement.ServerClearPatrol();
+        }
+
         currentTarget = targetObject;
     }
 
@@ -260,6 +267,12 @@ public class UnitCombat : NetworkBehaviour
 
     public void ServerAggroOn(Unit attacker)
     {
+        var movement = GetComponent<UnitMovement>();
+        if (movement != null)
+        {
+            movement.ServerClearPatrol();
+        }
+
         if (!IsServer)
             return;
 

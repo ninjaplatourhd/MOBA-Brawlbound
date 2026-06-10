@@ -21,9 +21,19 @@ public enum ProjectileType
     Rocket,
 }
 
+// unit dugmad opcije: move, attack, patrol, stop
+public enum CommandMode
+{
+    None,
+    Move,
+    Attack,
+    Patrol
+}
+
 
 public class GameplayEnums : MonoBehaviour
 {
 
 
 }
+
