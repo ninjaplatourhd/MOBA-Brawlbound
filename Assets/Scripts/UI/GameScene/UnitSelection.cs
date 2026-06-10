@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class UnitSelection : MonoBehaviour
 {
@@ -11,6 +12,8 @@ public class UnitSelection : MonoBehaviour
 
     private Vector2 _startingPoint;
     private RectTransform rectTransform;
+
+    private bool MouseStartedOnUI;
 
     private bool _isDragging;
     private float _dragThreshold = 10f;
@@ -62,6 +65,9 @@ public class UnitSelection : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
+            MouseStartedOnUI = EventSystem.current != null &&
+                               EventSystem.current.IsPointerOverGameObject();
+
             _isDragging = false;
             _startingPoint = Input.mousePosition;
 
@@ -100,6 +106,21 @@ public class UnitSelection : MonoBehaviour
 
         else if (Input.GetMouseButtonUp(0))
         {
+            //if (InputBlocker.IsPointerOverUI())
+            //{
+            //    _isDragging = false;
+            //    _selectionArea.SetActive(false);
+            //    return;
+            //}
+
+            //hard code ako bloker skript ne bude radio
+            if (MouseStartedOnUI)
+            {
+                _isDragging = false;
+                _selectionArea.SetActive(false);
+                return;
+            }
+
             _selectionArea.SetActive(false);
 
             if (_isDragging)
@@ -110,6 +131,22 @@ public class UnitSelection : MonoBehaviour
             {
                 SelectSingleUnit();
             }
+
+            _isDragging = false;
+        }
+
+        if (Input.GetMouseButtonUp(0))
+        {
+            _isDragging = false;
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (!Input.GetMouseButton(0))
+        {
+            _selectionArea.SetActive(false);
+            _isDragging = false;
         }
     }
 

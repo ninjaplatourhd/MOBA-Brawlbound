@@ -44,6 +44,8 @@ public class UnitManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (InputBlocker.IsPointerOverUI())
+            return;
 
         if (Input.GetMouseButtonDown(0))
         {
