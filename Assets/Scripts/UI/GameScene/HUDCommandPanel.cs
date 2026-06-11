@@ -73,4 +73,27 @@ public class HUDCommandPanel : MonoBehaviour
             }
         }
     }
+
+    public void SpawnWorker()
+    {
+        var building = BuildingManager.instance.SelectedBuildings;
+
+        if (building.Count == 0)
+            return;
+
+        Building selected = building[0].GetComponent<Building>();
+
+        if (selected == null)
+            return;
+
+        ProductionBuilding production = selected.GetComponent<ProductionBuilding>();
+
+        if (production == null)
+        {
+            Debug.LogWarning("Selected building cannot produce units.");
+            return;
+        }
+
+        production.RequestBuildUnit("worker");
+    }
 }
