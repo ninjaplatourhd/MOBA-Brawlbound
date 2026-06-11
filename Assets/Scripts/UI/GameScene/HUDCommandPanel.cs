@@ -2,8 +2,35 @@ using UnityEngine;
 
 public class HUDCommandPanel : MonoBehaviour
 {
+    [Header("Panels")]
+    [SerializeField] private GameObject unitButtons;
+    [SerializeField] private GameObject buildingButtons;
+
     public static bool MoveMode;
     public static bool AttackMode;
+
+    private void Start()
+    {
+        ShowNothing();
+    }
+
+    public void ShowUnitCommands()
+    {
+        unitButtons.SetActive(true);
+        buildingButtons.SetActive(false);
+    }
+
+    public void ShowBuildingCommands()
+    {
+        unitButtons.SetActive(false);
+        buildingButtons.SetActive(true);
+    }
+
+    public void ShowNothing()
+    {
+        unitButtons.SetActive(false);
+        buildingButtons.SetActive(false);
+    }
 
     public void MoveCommand()
     {

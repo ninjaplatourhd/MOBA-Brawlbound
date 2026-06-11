@@ -13,6 +13,8 @@ public class HUDController : MonoBehaviour
     [Header("UI - Icon")]
     public Image icon;
 
+    [SerializeField] private HUDCommandPanel commandPanel;
+    
     private void Update()
     {
         UpdateSelectionUI();
@@ -20,28 +22,31 @@ public class HUDController : MonoBehaviour
 
     private void UpdateSelectionUI()
     {
-        List<GameObject> units = UnitManager.instance.SelectedUnits;
-        List<GameObject> buildings = BuildingManager.instance.SelectedBuildings;
-
-        if (units.Count == 0 && buildings.Count == 0)
-        {
-            ClearUI();
+        if (UnitManager.instance == null || BuildingManager.instance == null)
             return;
-        }
 
-        // PRIORITY 1: Units
+        var units = UnitManager.instance.SelectedUnits;
+        var buildings = BuildingManager.instance.SelectedBuildings;
+
+        if (commandPanel == null)
+            return;
+
         if (units.Count > 0)
         {
             ShowUnit(units);
+            commandPanel.ShowUnitCommands();
             return;
         }
 
-        // PRIORITY 2: Buildings
         if (buildings.Count > 0)
         {
             ShowBuilding(buildings);
+            commandPanel.ShowBuildingCommands();
             return;
         }
+
+        ClearUI();
+        commandPanel.ShowNothing();
     }
 
     private void ShowUnit(List<GameObject> units)
