@@ -31,6 +31,11 @@ public enum CommandMode
     Guard
 }
 
+public enum UnitType
+{
+    Combat,
+    Worker
+}
 
 public class GameplayEnums : MonoBehaviour
 {

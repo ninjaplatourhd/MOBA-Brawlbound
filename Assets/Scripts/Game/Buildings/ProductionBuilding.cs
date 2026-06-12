@@ -1,6 +1,7 @@
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class ProductionBuilding : NetworkBehaviour
 {
@@ -128,9 +129,23 @@ public class ProductionBuilding : NetworkBehaviour
             return;
         }
 
-        Vector3 spawnPosition = spawnPoint != null
-            ? spawnPoint.position
-            : transform.position + transform.forward * 4f;
+        // Bio bug, spawn point bi se zakucao sa zgradom ako je spawnPoint null, sada se spawnuje ispred zgrade/Savo
+        Vector3 basePosition = spawnPoint != null
+        ? spawnPoint.position
+        : transform.position + transform.forward * 4f;
+
+        Vector3 spawnPosition = basePosition;
+
+        // snap to NavMesh
+        if (NavMesh.SamplePosition(basePosition, out NavMeshHit hit, 5f, NavMesh.AllAreas))
+        {
+            spawnPosition = hit.position;
+        }
+        else
+        {
+            Debug.LogWarning("No NavMesh found near spawn point!");
+            return;
+        }
 
         GameObject unitObject = Instantiate(
             buildableUnit.UnitPrefab,

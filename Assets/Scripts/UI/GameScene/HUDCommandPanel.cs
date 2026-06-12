@@ -4,6 +4,7 @@ public class HUDCommandPanel : MonoBehaviour
 {
     [Header("Panels")]
     [SerializeField] private GameObject unitButtons;
+    [SerializeField] private GameObject workerButtons;
     [SerializeField] private GameObject buildingButtons;
 
     public static bool MoveMode;
@@ -17,18 +18,28 @@ public class HUDCommandPanel : MonoBehaviour
     public void ShowUnitCommands()
     {
         unitButtons.SetActive(true);
+        workerButtons.SetActive(false);
+        buildingButtons.SetActive(false);
+    }
+
+    public void ShowWorkerCommands()
+    {
+        unitButtons.SetActive(false);
+        workerButtons.SetActive(true);
         buildingButtons.SetActive(false);
     }
 
     public void ShowBuildingCommands()
     {
         unitButtons.SetActive(false);
+        workerButtons.SetActive(false);
         buildingButtons.SetActive(true);
     }
 
     public void ShowNothing()
     {
         unitButtons.SetActive(false);
+        workerButtons.SetActive(false);
         buildingButtons.SetActive(false);
     }
 

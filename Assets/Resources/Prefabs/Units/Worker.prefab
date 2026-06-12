@@ -476,7 +476,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1016207270
+  GlobalObjectIdHash: 2809118635
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -593,6 +593,8 @@ MonoBehaviour:
   MaxAngularSpeed: 120
   MaxAcceleration: 10
   Weapons: []
+  IsWorker: 1
+  UnitType: 1
 --- !u!114 &7328462660337572134
 MonoBehaviour:
   m_ObjectHideFlags: 0

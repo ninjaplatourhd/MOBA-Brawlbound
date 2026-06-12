@@ -25,5 +25,10 @@ public class UnitData : MonoBehaviour
     [Header("Weapons")]
     public List<Weapon> Weapons = new List<Weapon>();
 
+    // Worker ima specijalnu dugmadu, pa je lakše da se razlikuje od ostalih jedinica/Savo
+    [Header("Unit Type")]
+    public bool IsWorker = false;
+
+    public UnitType UnitType;
 }
 

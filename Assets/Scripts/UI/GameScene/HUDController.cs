@@ -22,27 +22,63 @@ public class HUDController : MonoBehaviour
 
     private void UpdateSelectionUI()
     {
-        if (UnitManager.instance == null || BuildingManager.instance == null)
+        var units = UnitManager.instance != null ? UnitManager.instance.SelectedUnits : null;
+        var buildings = BuildingManager.instance != null ? BuildingManager.instance.SelectedBuildings : null;
+
+        if (units == null || buildings == null)
             return;
 
-        var units = UnitManager.instance.SelectedUnits;
-        var buildings = BuildingManager.instance.SelectedBuildings;
-
-        if (commandPanel == null)
-            return;
-
-        if (units.Count > 0)
+        // No selection
+        if (units.Count == 0 && buildings.Count == 0)
         {
-            ShowUnit(units);
-            commandPanel.ShowUnitCommands();
+            ClearUI();
+            commandPanel.ShowNothing();
             return;
         }
 
+        // BUILDINGS PRIORITY (optional, you can change later)
         if (buildings.Count > 0)
         {
             ShowBuilding(buildings);
             commandPanel.ShowBuildingCommands();
             return;
+        }
+
+        // UNIT HANDLING
+        if (units.Count > 0)
+        {
+            bool hasCombatUnits = false;
+            bool hasWorkerOnly = true;
+
+            foreach (var u in units)
+            {
+                if (u == null) continue;
+
+                var data = u.GetComponent<UnitData>();
+                if (data == null) continue;
+
+                if (data.UnitType == UnitType.Combat)
+                    hasCombatUnits = true;
+
+                if (data.UnitType == UnitType.Combat)
+                    hasWorkerOnly = false;
+            }
+
+            
+            if (hasCombatUnits)
+            {
+                ShowUnit(units);
+                commandPanel.ShowUnitCommands(); // army commands
+                return;
+            }
+
+            // Only workers selected
+            if (hasWorkerOnly)
+            {
+                ShowWorker(units);
+                commandPanel.ShowWorkerCommands();
+                return;
+            }
         }
 
         ClearUI();
@@ -71,6 +107,33 @@ public class HUDController : MonoBehaviour
         {
             nameText.text = $"{units.Count} Units Selected";
             typeText.text = "Group";
+            hpText.text = "";
+
+            icon.enabled = false;
+        }
+    }
+
+    private void ShowWorker(List<GameObject> units)
+    {
+        if (units.Count == 1)
+        {
+            Unit unit = units[0].GetComponent<Unit>();
+            UnitData data = units[0].GetComponent<UnitData>();
+
+            nameText.text = data.DisplayName;
+            typeText.text = "Worker";
+
+            float hp = unit.Health.Value;
+            float maxHp = unit.MaxHealth.Value;
+
+            hpText.text = $"{hp} / {maxHp}";
+
+            icon.enabled = true;
+        }
+        else
+        {
+            nameText.text = $"{units.Count} Workers Selected";
+            typeText.text = "Workers";
             hpText.text = "";
 
             icon.enabled = false;
