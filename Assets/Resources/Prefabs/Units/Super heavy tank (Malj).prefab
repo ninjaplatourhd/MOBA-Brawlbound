@@ -654,7 +654,7 @@ MonoBehaviour:
   UnitId: super_heavy_tank_malj
   DisplayName: Super Heavy Tank (Malj)
   MovesGun: 0
-  Range: 50
+  Range: 30
   DamageBonus: 0
   Armor: 10
   AttackSpeed: 1
@@ -666,12 +666,15 @@ MonoBehaviour:
   - Name: Cannon
     Damage: 30
     FireRate: 0.9
-    Range: 300
+    Range: 30
     RotationSpeed: 0
     FiringArc: 15
     DamageType: 0
     ProjectileType: 0
     ProjectileName: VelikiMetak12
+    ProjectileSpeed: 35
+    ProjectileRadius: 0.4
+    ProjectileLifeTime: 5
 --- !u!114 &-4312971399507570870
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -685,7 +688,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  projectilePrefab: {fileID: 1949386386527897104, guid: 7df80a55ba9d619448964c63b0324488, type: 3}
   fallbackBarrel: {fileID: 0}
   projectileSpeed: 35
   autoAggroInterval: 0.5

@@ -201,6 +201,7 @@ public class UnitMovement : NetworkBehaviour
         UnitCombat combat = GetComponent<UnitCombat>();
         if (combat != null)
         {
+            combat.ServerClearGuardMode();
             combat.ServerClearAttackTarget();
         }
 
@@ -259,6 +260,7 @@ public class UnitMovement : NetworkBehaviour
         UnitCombat combat = GetComponent<UnitCombat>();
         if (combat != null)
         {
+            combat.ServerClearGuardMode();
             combat.ServerClearAttackTarget();
         }
 
@@ -320,10 +322,10 @@ public class UnitMovement : NetworkBehaviour
             _agent.speed = 0f;
         }
 
-        // stop combat behavior
         UnitCombat combat = GetComponent<UnitCombat>();
         if (combat != null)
         {
+            combat.ServerClearGuardMode();
             combat.ServerClearAttackTarget();
         }
 
@@ -331,6 +333,51 @@ public class UnitMovement : NetworkBehaviour
 
         // stop patrol
         ServerClearPatrol();
+    }
+    public void ServerMoveToAttackRange(Vector3 targetPosition, float desiredRange)
+    {
+        if (!IsServer)
+            return;
+
+        if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh)
+            return;
+
+        Vector3 fromTargetToUnit = transform.position - targetPosition;
+        fromTargetToUnit.y = 0f;
+
+        if (fromTargetToUnit.sqrMagnitude < 0.01f)
+            fromTargetToUnit = -transform.forward;
+
+        Vector3 chasePosition = targetPosition + fromTargetToUnit.normalized * desiredRange;
+
+        _targetLocation = chasePosition;
+        _hasMoveTarget = true;
+
+        _hasPatrol = false;
+
+        _agent.isStopped = false;
+        _agent.stoppingDistance = 0.2f;
+
+        if (!_agent.hasPath || Vector3.Distance(_agent.destination, chasePosition) > 1f)
+        {
+            _agent.SetDestination(chasePosition);
+        }
+    }
+
+    public void ServerStopMovementOnly()
+    {
+        if (!IsServer)
+            return;
+
+        _hasMoveTarget = false;
+        _targetLocation = transform.position;
+
+        if (_agent != null && _agent.enabled && _agent.isOnNavMesh)
+        {
+            _agent.isStopped = true;
+            _agent.ResetPath();
+            _agent.speed = 0f;
+        }
     }
 }
 

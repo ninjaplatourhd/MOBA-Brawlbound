@@ -304,4 +304,20 @@ public class UnitManager : MonoBehaviour
         _patrolMode = true;
     }
 
+    public void GuardSelectedUnits()
+    {
+        foreach (GameObject unitObj in SelectedUnits)
+        {
+            if (unitObj == null)
+                continue;
+
+            if (unitObj.TryGetComponent<UnitCombat>(out UnitCombat combat))
+            {
+                combat.RequestGuard();
+            }
+        }
+
+        CurrentCommandMode = CommandMode.None;
+    }
+
 }

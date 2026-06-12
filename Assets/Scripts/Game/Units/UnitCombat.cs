@@ -1,3 +1,4 @@
+﻿using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -8,6 +9,11 @@ public class UnitCombat : NetworkBehaviour
     [SerializeField] private float projectileSpeed = 35f;
     [SerializeField] private float autoAggroInterval = 0.5f;
     [SerializeField] private float autoAggroDelayAfterMoveOrder = 1f;
+    [SerializeField] private float attackRangeFactor = 0.9f;
+    [SerializeField] private float minimumAttackDistance = 1.5f;
+
+    private bool guardMode;
+    private readonly List<float> weaponNextFireTimes = new List<float>();
 
     private float nextAutoAggroTime;
     private float suppressAutoAggroUntil;
@@ -81,17 +87,16 @@ public class UnitCombat : NetworkBehaviour
         if (ownedTarget == null || damageableTarget == null)
             return;
 
-        // Ne napadaj svoje.
         if (ownedTarget.OwnerClientId == senderClientId)
             return;
 
-        // Postavi novi target i obustavi patroliranje ako je bilo.
         UnitMovement movement = GetComponent<UnitMovement>();
         if (movement != null)
         {
             movement.ServerClearPatrol();
         }
 
+        guardMode = false;
         currentTarget = targetObject;
     }
 
@@ -101,10 +106,13 @@ public class UnitCombat : NetworkBehaviour
         {
             TryAutoAcquireTarget();
 
-            if (movement != null)
-                movement.ServerClearCombatLookTarget();
+            if (currentTarget == null)
+            {
+                if (movement != null)
+                    movement.ServerClearCombatLookTarget();
 
-            return;
+                return;
+            }
         }
 
         if (data == null || data.Weapons == null || data.Weapons.Count == 0)
@@ -129,12 +137,37 @@ public class UnitCombat : NetworkBehaviour
             return;
         }
 
-        Weapon weapon = data.Weapons[0];
-
         Vector3 targetPosition = currentTarget.transform.position;
         float distance = Vector3.Distance(transform.position, targetPosition);
 
-        if (distance > weapon.Range)
+        float minWeaponRange = GetMinimumWeaponRange();
+        float maxWeaponRange = GetMaximumWeaponRange();
+
+        float desiredAttackRange = Mathf.Max(
+            minimumAttackDistance,
+            minWeaponRange * attackRangeFactor
+        );
+
+        // Ako nije Guard, unit sme da chase-uje dok ne uđe u range najkraćeg oružja.
+        if (!guardMode && distance > desiredAttackRange)
+        {
+            if (movement != null)
+                movement.ServerMoveToAttackRange(targetPosition, desiredAttackRange);
+        }
+
+        // Ako je Guard i target izađe iz max range-a, ne chase-uj.
+        if (guardMode && distance > maxWeaponRange)
+        {
+            currentTarget = null;
+
+            if (movement != null)
+                movement.ServerClearCombatLookTarget();
+
+            return;
+        }
+
+        // Ako je van range-a svih oružja, nema pucanja još.
+        if (distance > maxWeaponRange)
             return;
 
         Transform aimTransform = GetAimTransform();
@@ -147,35 +180,9 @@ public class UnitCombat : NetworkBehaviour
 
         Vector3 normalizedDirection = direction.normalized;
 
-        if (data.MovesGun)
-        {
-            // Rotira samo kupolu/gun pivot.
-            Quaternion targetRotation = Quaternion.LookRotation(normalizedDirection);
+        RotateTowardsTarget(aimTransform, normalizedDirection, targetPosition);
 
-            aimTransform.rotation = Quaternion.RotateTowards(
-                aimTransform.rotation,
-                targetRotation,
-                weapon.RotationSpeed * Time.deltaTime
-            );
-        }
-        else
-        {
-            // Rotira celo telo tenka preko UnitMovement.
-            if (movement != null)
-                movement.ServerSetCombatLookTarget(targetPosition);
-        }
-
-        float angle = Vector3.Angle(aimTransform.forward, normalizedDirection);
-
-        if (angle > weapon.FiringArc)
-            return;
-
-        if (Time.time < nextFireTime)
-            return;
-
-        nextFireTime = Time.time + 1f / weapon.FireRate;
-
-        FireProjectile(currentTarget, weapon);
+        TryFireWeapons(distance, aimTransform, normalizedDirection);
     }
 
     private void TryAutoAcquireTarget()
@@ -194,12 +201,11 @@ public class UnitCombat : NetworkBehaviour
         if (data == null || data.Weapons == null || data.Weapons.Count == 0)
             return;
 
-        Weapon weapon = data.Weapons[0];
+        float maxWeaponRange = GetMaximumWeaponRange();
 
         NetworkObject bestTarget = null;
-        float bestDistanceSqr = weapon.Range * weapon.Range;
+        float bestDistanceSqr = maxWeaponRange * maxWeaponRange;
 
-        // Check enemy units
         if (UnitManager.instance != null)
         {
             foreach (GameObject unitObj in UnitManager.instance.AllUnitsList)
@@ -208,7 +214,6 @@ public class UnitCombat : NetworkBehaviour
             }
         }
 
-        // Check enemy buildings
         if (BuildingManager.instance != null)
         {
             foreach (GameObject buildingObj in BuildingManager.instance.AllBuildingsList)
@@ -238,7 +243,6 @@ public class UnitCombat : NetworkBehaviour
         if (targetNetworkObject == null || ownedTarget == null || damageableTarget == null)
             return;
 
-        // Ignore friendly targets
         if (ownedTarget.OwnerClientId == unit.PlayerClientId.Value)
             return;
 
@@ -261,7 +265,7 @@ public class UnitCombat : NetworkBehaviour
             return unit.Barrels[0];
         }
 
-        Debug.LogError($"{gameObject.name} nema nijedan barrel pode�en u Unit komponenti.");
+        Debug.LogError($"{gameObject.name} nema nijedan barrel podešen u Unit komponenti.");
         return null;
     }
 
@@ -352,5 +356,179 @@ public class UnitCombat : NetworkBehaviour
             return targetBuilding.Health.Value <= 0f;
 
         return true;
+    }
+
+    public void RequestGuard()
+    {
+        if (unit == null)
+            unit = GetComponent<Unit>();
+
+        if (!unit.BelongsToLocalPlayer())
+            return;
+
+        SetGuardServerRpc();
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SetGuardServerRpc(ServerRpcParams rpcParams = default)
+    {
+        ulong senderClientId = rpcParams.Receive.SenderClientId;
+
+        if (unit.PlayerClientId.Value != senderClientId)
+            return;
+
+        ServerSetGuardMode(true);
+    }
+
+    public void ServerSetGuardMode(bool enabled)
+    {
+        if (!IsServer)
+            return;
+
+        guardMode = enabled;
+
+        if (guardMode)
+        {
+            currentTarget = null;
+            suppressAutoAggroUntil = 0f;
+
+            if (movement != null)
+            {
+                movement.ServerClearPatrol();
+                movement.ServerClearCombatLookTarget();
+                movement.ServerStopMovementOnly();
+            }
+        }
+    }
+
+    public void ServerClearGuardMode()
+    {
+        if (!IsServer)
+            return;
+
+        guardMode = false;
+    }
+
+    private void RotateTowardsTarget(Transform aimTransform, Vector3 normalizedDirection, Vector3 targetPosition)
+    {
+        float rotationSpeed = GetRotationSpeedForAiming();
+
+        if (data.MovesGun)
+        {
+            Quaternion targetRotation = Quaternion.LookRotation(normalizedDirection);
+
+            aimTransform.rotation = Quaternion.RotateTowards(
+                aimTransform.rotation,
+                targetRotation,
+                rotationSpeed * Time.deltaTime
+            );
+        }
+        else
+        {
+            if (movement != null)
+                movement.ServerSetCombatLookTarget(targetPosition);
+        }
+    }
+
+    private void TryFireWeapons(float distance, Transform aimTransform, Vector3 normalizedDirection)
+    {
+        EnsureWeaponCooldownList();
+
+        float angle = Vector3.Angle(aimTransform.forward, normalizedDirection);
+
+        for (int i = 0; i < data.Weapons.Count; i++)
+        {
+            Weapon weapon = data.Weapons[i];
+
+            if (weapon == null)
+                continue;
+
+            if (distance > weapon.Range)
+                continue;
+
+            if (angle > weapon.FiringArc)
+                continue;
+
+            if (Time.time < weaponNextFireTimes[i])
+                continue;
+
+            float fireRate = Mathf.Max(0.01f, weapon.FireRate);
+            weaponNextFireTimes[i] = Time.time + 1f / fireRate;
+
+            FireProjectile(currentTarget, weapon);
+        }
+    }
+
+    private void EnsureWeaponCooldownList()
+    {
+        while (weaponNextFireTimes.Count < data.Weapons.Count)
+        {
+            weaponNextFireTimes.Add(0f);
+        }
+
+        while (weaponNextFireTimes.Count > data.Weapons.Count)
+        {
+            weaponNextFireTimes.RemoveAt(weaponNextFireTimes.Count - 1);
+        }
+    }
+
+    private float GetMinimumWeaponRange()
+    {
+        if (data == null || data.Weapons == null || data.Weapons.Count == 0)
+            return 0f;
+
+        float minRange = float.MaxValue;
+
+        foreach (Weapon weapon in data.Weapons)
+        {
+            if (weapon == null)
+                continue;
+
+            minRange = Mathf.Min(minRange, weapon.Range);
+        }
+
+        if (minRange == float.MaxValue)
+            return 0f;
+
+        return minRange;
+    }
+
+    private float GetMaximumWeaponRange()
+    {
+        if (data == null || data.Weapons == null || data.Weapons.Count == 0)
+            return 0f;
+
+        float maxRange = 0f;
+
+        foreach (Weapon weapon in data.Weapons)
+        {
+            if (weapon == null)
+                continue;
+
+            maxRange = Mathf.Max(maxRange, weapon.Range);
+        }
+
+        return maxRange;
+    }
+
+    private float GetRotationSpeedForAiming()
+    {
+        if (data == null || data.Weapons == null || data.Weapons.Count == 0)
+            return 120f;
+
+        float slowestRotationSpeed = float.MaxValue;
+
+        foreach (Weapon weapon in data.Weapons)
+        {
+            if (weapon == null)
+                continue;
+
+            slowestRotationSpeed = Mathf.Min(slowestRotationSpeed, weapon.RotationSpeed);
+        }
+
+        if (slowestRotationSpeed == float.MaxValue)
+            return 120f;
+
+        return slowestRotationSpeed;
     }
 }

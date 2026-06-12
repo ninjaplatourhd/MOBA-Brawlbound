@@ -42,6 +42,11 @@ public class HUDCommandPanel : MonoBehaviour
         UnitManager.instance.CurrentCommandMode = CommandMode.Attack;
     }
 
+    public void GuardCommand()
+    {
+        UnitManager.instance.GuardSelectedUnits();
+    }
+
     public void PatrolCommand()
     {
         var units = UnitManager.instance.SelectedUnits;
