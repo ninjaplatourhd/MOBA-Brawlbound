@@ -252,11 +252,7 @@ public class HUDController : MonoBehaviour
 
             UnitEntryUI entry = entryObj.GetComponent<UnitEntryUI>();
 
-            entry.Setup(
-                data.Icon,
-                unit.Health.Value,
-                unit.MaxHealth.Value
-            );
+            entry.Setup(obj, data.Icon);
         }
 
         if (multiUnitScrollView != null)
