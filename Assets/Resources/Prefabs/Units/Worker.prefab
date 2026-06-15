@@ -595,6 +595,7 @@ MonoBehaviour:
   Weapons: []
   IsWorker: 1
   UnitType: 1
+  Icon: {fileID: 21300000, guid: c0dbfec0f531cae49a9f23afc5289242, type: 3}
 --- !u!114 &7328462660337572134
 MonoBehaviour:
   m_ObjectHideFlags: 0

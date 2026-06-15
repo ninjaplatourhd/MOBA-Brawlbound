@@ -11,10 +11,11 @@ public class HUDController : MonoBehaviour
     public TMP_Text hpText;
 
     [Header("UI - Icon")]
-    public Image icon;
+    [SerializeField] private Image iconImage;
 
     [SerializeField] private HUDCommandPanel commandPanel;
-    
+
+
     private void Update()
     {
         UpdateSelectionUI();
@@ -100,8 +101,7 @@ public class HUDController : MonoBehaviour
 
             hpText.text = $"{hp} / {maxHp}";
 
-            // icon later (optional)
-            icon.enabled = true;
+            SetIcon(data.Icon);
         }
         else
         {
@@ -109,7 +109,7 @@ public class HUDController : MonoBehaviour
             typeText.text = "Group";
             hpText.text = "";
 
-            icon.enabled = false;
+            ClearIcon();
         }
     }
 
@@ -128,7 +128,7 @@ public class HUDController : MonoBehaviour
 
             hpText.text = $"{hp} / {maxHp}";
 
-            icon.enabled = true;
+            SetIcon(data.Icon);
         }
         else
         {
@@ -136,7 +136,7 @@ public class HUDController : MonoBehaviour
             typeText.text = "Workers";
             hpText.text = "";
 
-            icon.enabled = false;
+            ClearIcon();
         }
     }
 
@@ -155,7 +155,7 @@ public class HUDController : MonoBehaviour
 
             hpText.text = $"{hp} / {maxHp}";
 
-            icon.enabled = true;
+            SetIcon(data.Icon);
         }
         else
         {
@@ -163,8 +163,51 @@ public class HUDController : MonoBehaviour
             typeText.text = "Group";
             hpText.text = "";
 
-            icon.enabled = false;
+            ClearIcon();
         }
+    }
+
+    public void SetIcon(Sprite icon)
+    {
+        if (iconImage == null)
+            return;
+
+        iconImage.enabled = icon != null;
+        iconImage.sprite = icon;
+    }
+
+    public void ClearIcon()
+    {
+        if (iconImage == null)
+            return;
+
+        iconImage.sprite = null;
+        iconImage.enabled = false;
+    }
+
+    public void UpdateSelectionIcon(GameObject selectedObject)
+    {
+        if (selectedObject == null)
+        {
+            ClearIcon();
+            return;
+        }
+
+        UnitData unitData = selectedObject.GetComponent<UnitData>();
+        if (unitData != null)
+        {
+            SetIcon(unitData.Icon);
+            return;
+        }
+
+        BuildingData buildingData = selectedObject.GetComponent<BuildingData>();
+        if (buildingData != null)
+        {
+            SetIcon(buildingData.Icon);
+            return;
+        }
+
+        ClearIcon();
     }
 
     private void ClearUI()
@@ -172,6 +215,6 @@ public class HUDController : MonoBehaviour
         nameText.text = "";
         typeText.text = "";
         hpText.text = "";
-        icon.enabled = false;
+        ClearIcon();
     }
 }

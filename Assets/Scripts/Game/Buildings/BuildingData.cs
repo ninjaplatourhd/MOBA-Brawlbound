@@ -15,4 +15,7 @@ public class BuildingData : MonoBehaviour
     public bool CanBuildUnits = true;
 
     public List<BuildableUnit> BuildableUnits = new List<BuildableUnit>();
+
+    [Header("UI")]
+    public Sprite Icon;
 }

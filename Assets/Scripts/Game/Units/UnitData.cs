@@ -30,5 +30,8 @@ public class UnitData : MonoBehaviour
     public bool IsWorker = false;
 
     public UnitType UnitType;
+
+    [Header("UI")]
+    public Sprite Icon;
 }
 

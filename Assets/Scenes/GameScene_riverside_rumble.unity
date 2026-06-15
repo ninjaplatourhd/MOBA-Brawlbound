@@ -6708,6 +6708,7 @@ MonoBehaviour:
   hpText: {fileID: 1504853243}
   icon: {fileID: 1059457295}
   commandPanel: {fileID: 253216630}
+  iconImage: {fileID: 1059457295}
 --- !u!114 &1834303173
 MonoBehaviour:
   m_ObjectHideFlags: 0
