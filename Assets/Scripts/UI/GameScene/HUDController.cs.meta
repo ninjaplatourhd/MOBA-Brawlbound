@@ -1,2 +1,18 @@
 fileFormatVersion: 2
 guid: 79863cb33016acb42825098cfae69e92
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - nameText: {instanceID: 0}
+  - typeText: {instanceID: 0}
+  - hpText: {instanceID: 0}
+  - iconImage: {instanceID: 0}
+  - commandPanel: {instanceID: 0}
+  - multiUnitContainer: {instanceID: 0}
+  - unitEntryPrefab: {fileID: 8057117295735093820, guid: 9f8c87be719a1ca45bc711f324d3d113, type: 3}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

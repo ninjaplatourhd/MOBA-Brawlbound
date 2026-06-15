@@ -15,6 +15,11 @@ public class HUDController : MonoBehaviour
 
     [SerializeField] private HUDCommandPanel commandPanel;
 
+    [Header("Multi Unit UI")]
+    [SerializeField] private Transform multiUnitContainer;
+    [SerializeField] private GameObject unitEntryPrefab;
+
+    [SerializeField] private GameObject multiUnitScrollView;
 
     private void Update()
     {
@@ -68,8 +73,16 @@ public class HUDController : MonoBehaviour
             
             if (hasCombatUnits)
             {
-                ShowUnit(units);
-                commandPanel.ShowUnitCommands(); // army commands
+                if (units.Count == 1)
+                {
+                    ShowUnit(units);
+                }
+                else
+                {
+                    ShowMultiUnits(units);
+                }
+
+                commandPanel.ShowUnitCommands();
                 return;
             }
 
@@ -210,11 +223,55 @@ public class HUDController : MonoBehaviour
         ClearIcon();
     }
 
+    private void ClearMultiUnits()
+    {
+        if (multiUnitContainer == null)
+            return;
+
+        foreach (Transform child in multiUnitContainer)
+        {
+            Destroy(child.gameObject);
+        }
+    }
+
+    private void ShowMultiUnits(List<GameObject> units)
+    {
+        ClearMultiUnits();
+
+        foreach (var obj in units)
+        {
+            if (obj == null) continue;
+
+            Unit unit = obj.GetComponent<Unit>();
+            UnitData data = obj.GetComponent<UnitData>();
+
+            if (unit == null || data == null)
+                continue;
+
+            GameObject entryObj = Instantiate(unitEntryPrefab, multiUnitContainer);
+
+            UnitEntryUI entry = entryObj.GetComponent<UnitEntryUI>();
+
+            entry.Setup(
+                data.Icon,
+                unit.Health.Value,
+                unit.MaxHealth.Value
+            );
+        }
+
+        if (multiUnitScrollView != null)
+            multiUnitScrollView.SetActive(true);
+    }
+
     private void ClearUI()
     {
         nameText.text = "";
         typeText.text = "";
         hpText.text = "";
         ClearIcon();
+        ClearMultiUnits();
+
+        if (multiUnitScrollView != null)
+            multiUnitScrollView.SetActive(false);
     }
 }
