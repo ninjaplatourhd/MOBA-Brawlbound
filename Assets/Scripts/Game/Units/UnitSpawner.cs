@@ -4,6 +4,7 @@ using UnityEngine;
 public class UnitSpawner : NetworkBehaviour
 {
     [SerializeField] private GameObject tankPrefab;
+    [SerializeField] private GameObject tankPrefab2;
     [SerializeField] private LayerMask ground;
 
     private Camera mainCamera;
@@ -24,11 +25,16 @@ public class UnitSpawner : NetworkBehaviour
         if (Input.GetKeyDown(KeyCode.P))
         {
             IngameConsole.print("Klikno sam p");
-            TrySpawnTank();
+            TrySpawnTank("Malj");
+        }
+        if (Input.GetKeyDown(KeyCode.O))
+        {
+            IngameConsole.print("Klikno sam o");
+            TrySpawnTank("Leopard");
         }
     }
 
-    private void TrySpawnTank()
+    private void TrySpawnTank(string name)
     {
         if (mainCamera == null)
         {
@@ -39,16 +45,20 @@ public class UnitSpawner : NetworkBehaviour
 
         if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, ground))
         {
-            SpawnTankServerRpc(hit.point);
+            SpawnTankServerRpc(hit.point, name);
         }
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void SpawnTankServerRpc(Vector3 position, ServerRpcParams rpcParams = default)
+    private void SpawnTankServerRpc(Vector3 position, string name, ServerRpcParams rpcParams = default)
     {
         ulong clientId = rpcParams.Receive.SenderClientId;
+        GameObject tankObj;
 
-        GameObject tankObj = Instantiate(tankPrefab, position, Quaternion.identity);
+        if (name == "Malj")
+            tankObj = Instantiate(tankPrefab, position, Quaternion.identity);
+        else
+            tankObj = Instantiate(tankPrefab2, position, Quaternion.identity);
 
         Unit unit = tankObj.GetComponent<Unit>();
         NetworkObject netObj = tankObj.GetComponent<NetworkObject>();

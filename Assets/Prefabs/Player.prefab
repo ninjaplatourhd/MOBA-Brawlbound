@@ -346,6 +346,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   tankPrefab: {fileID: 7338278125657640901, guid: 867450bc78fdcb04babf80822c90757b, type: 3}
+  tankPrefab2: {fileID: 3678573704109649453, guid: f6f48857f2fb06245b2ce1657f7249e9, type: 3}
   ground:
     serializedVersion: 2
     m_Bits: 64

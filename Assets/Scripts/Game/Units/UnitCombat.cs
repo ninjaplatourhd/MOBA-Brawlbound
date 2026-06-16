@@ -320,7 +320,7 @@ public class UnitCombat : NetworkBehaviour
         if (barrel == null)
             return;
 
-        Vector3 aimPoint = targetObject.transform.position + Vector3.up * 1.2f;
+        Vector3 aimPoint = targetObject.transform.position + Vector3.up * 0.5f;
         Vector3 direction = aimPoint - barrel.position;
 
         if (direction.sqrMagnitude < 0.01f)
