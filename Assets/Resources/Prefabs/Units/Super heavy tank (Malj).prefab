@@ -207,7 +207,7 @@ Transform:
   m_GameObject: {fileID: 8669175265721750370}
   serializedVersion: 2
   m_LocalRotation: {x: 0.7071068, y: -0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0}
   m_LocalScale: {x: 3.85, y: 3.85, z: 3.85}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -531,7 +531,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1885601786
+  GlobalObjectIdHash: 3134993084
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -695,8 +695,12 @@ MonoBehaviour:
   projectileSpeed: 35
   autoAggroInterval: 0.5
   autoAggroDelayAfterMoveOrder: 1
+  autoAggroRangeMultiplier: 1.25
   attackRangeFactor: 0.9
   minimumAttackDistance: 1.5
+  turretYawOffset: 0
+  turretYawSyncThreshold: 0.05
+  debugCombat: 0
 --- !u!4 &7970559625255163263 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
