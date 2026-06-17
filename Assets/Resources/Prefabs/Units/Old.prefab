@@ -106,6 +106,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 3420760976508620193}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3974038394574196591
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1465653169450422153}
+  m_Layer: 7
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1465653169450422153
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3974038394574196591}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4055275856472061079}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5490980784047995582
 GameObject:
   m_ObjectHideFlags: 0
@@ -447,7 +478,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: f7f5d314a6ef3964cacfeb5fac962f30, type: 3}
       propertyPath: m_Name
-      value: Light tank (Leopard)
+      value: Old
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: f7f5d314a6ef3964cacfeb5fac962f30, type: 3}
       propertyPath: m_Layer
@@ -466,6 +497,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: f7f5d314a6ef3964cacfeb5fac962f30, type: 3}
       insertIndex: -1
       addedObject: {fileID: 8965460862177272195}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: f7f5d314a6ef3964cacfeb5fac962f30, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1465653169450422153}
     - targetCorrespondingSourceObject: {fileID: 1204001934383636189, guid: f7f5d314a6ef3964cacfeb5fac962f30, type: 3}
       insertIndex: -1
       addedObject: {fileID: 3169040709861213329}

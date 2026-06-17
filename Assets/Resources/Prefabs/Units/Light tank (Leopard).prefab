@@ -106,6 +106,37 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &1286962434573851729
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 742592237673056523}
+  m_Layer: 0
+  m_Name: GameObject
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &742592237673056523
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1286962434573851729}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -2.6428282, y: 4.200117, z: 3.3653233}
+  m_LocalScale: {x: 5, y: 5, z: 5}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6682029861601284633}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5806277001394452064
 GameObject:
   m_ObjectHideFlags: 0
@@ -449,6 +480,14 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: -7767867054659354168, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 62148d62685f946488c3b536a03edca3, type: 2}
+    - target: {fileID: 170818459280178945, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: ab72ad09873f14148b01ba4e94d3f44a, type: 2}
     - target: {fileID: 919132149155446097, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
       propertyPath: m_Name
       value: Light tank (Leopard)
@@ -477,6 +516,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.x
       value: -90
       objectReference: {fileID: 0}
+    - target: {fileID: 3902297587364882546, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 62148d62685f946488c3b536a03edca3, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -486,6 +529,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2748751889732850571}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 742592237673056523}
     - targetCorrespondingSourceObject: {fileID: 1204001934383636189, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4189573925981050543}
@@ -724,8 +770,12 @@ MonoBehaviour:
   projectileSpeed: 40
   autoAggroInterval: 0.5
   autoAggroDelayAfterMoveOrder: 1
+  autoAggroRangeMultiplier: 1.25
   attackRangeFactor: 0.9
   minimumAttackDistance: 1.5
+  turretYawOffset: 0
+  turretYawSyncThreshold: 0.05
+  debugCombat: 0
 --- !u!4 &6682029861601284633 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}

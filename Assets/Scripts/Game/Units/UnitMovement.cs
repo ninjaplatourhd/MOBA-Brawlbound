@@ -14,14 +14,15 @@ public class UnitMovement : NetworkBehaviour
 
     private bool _hasMoveTarget;
 
+
+    private bool _isPlayerMoveCommand;
+    public bool IsExecutingPlayerMoveCommand => _isPlayerMoveCommand && _hasMoveTarget;
+
     private bool _hasCombatLookTarget;
     private Vector3 _combatLookTarget;
 
-    // Ako je angle veći od ovoga, tenk neće ići napred.
-    // 36 stepeni znači otprilike "80% okrenut".
     [SerializeField] private float startMovingAngle = 36f;
 
-    // Patroling
     private bool _hasPatrol;
     private Vector3 _patrolPointA;
     private Vector3 _patrolPointB;
@@ -35,18 +36,21 @@ public class UnitMovement : NetworkBehaviour
 
         _targetLocation = transform.position;
 
-        _agent.updateRotation = false;
-
-        if (_data != null)
+        if (_agent != null)
         {
-            _agent.speed = _data.MaxSpeed;
-            _agent.angularSpeed = _data.MaxAngularSpeed;
-            _agent.acceleration = _data.MaxAcceleration;
-        }
+            _agent.updateRotation = false;
 
-        if (!IsServer)
-        {
-            _agent.enabled = false;
+            if (_data != null)
+            {
+                _agent.speed = _data.MaxSpeed;
+                _agent.angularSpeed = _data.MaxAngularSpeed;
+                _agent.acceleration = _data.MaxAcceleration;
+            }
+
+            if (!IsServer)
+            {
+                _agent.enabled = false;
+            }
         }
     }
 
@@ -60,23 +64,22 @@ public class UnitMovement : NetworkBehaviour
 
     private void ServerUpdateMovement()
     {
-        if (_agent == null || !_agent.enabled)
+        if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh)
             return;
 
         _updatePathTimer += Time.deltaTime;
 
         if (_hasMoveTarget && _updatePathTimer >= _updatePathDelay)
         {
-            _updatePathTimer = 0;
+            _updatePathTimer = 0f;
             _agent.SetDestination(_targetLocation);
         }
 
         Vector3 moveDirection = GetMovementDirection();
 
+        Vector3 lookDirection;
 
-        Vector3 lookDirection = Vector3.zero;
-
-        if (_hasCombatLookTarget)
+        if (_hasCombatLookTarget && !_isPlayerMoveCommand)
         {
             lookDirection = _combatLookTarget - transform.position;
             lookDirection.y = 0f;
@@ -87,32 +90,48 @@ public class UnitMovement : NetworkBehaviour
         }
 
         RotateBodyTowards(lookDirection);
-
         UpdateMovementSpeedBasedOnRotation(moveDirection);
 
         if (_hasMoveTarget && !_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance + 0.2f)
         {
             _hasMoveTarget = false;
+            _isPlayerMoveCommand = false;
             _agent.speed = 0f;
         }
 
-        // Patroling logic
-        if (_hasPatrol && _agent.enabled && _agent.isOnNavMesh && !_agent.pathPending && _agent.remainingDistance <= _agent.stoppingDistance + 0.2f)
-        {
-            if (_goingToB)
-            {
-                _goingToB = false;
-                _targetLocation = _patrolPointA;
-            }
-            else
-            {
-                _goingToB = true;
-                _targetLocation = _patrolPointB;
-            }
+        HandlePatrolServer();
+    }
 
-            _agent.SetDestination(_targetLocation);
-            _hasMoveTarget = true;
+    private void HandlePatrolServer()
+    {
+        if (!_hasPatrol)
+            return;
+
+        if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh)
+            return;
+
+        if (_agent.pathPending)
+            return;
+
+        if (_agent.remainingDistance > _agent.stoppingDistance + 0.2f)
+            return;
+
+        if (_goingToB)
+        {
+            _goingToB = false;
+            _targetLocation = _patrolPointA;
         }
+        else
+        {
+            _goingToB = true;
+            _targetLocation = _patrolPointB;
+        }
+
+        _hasMoveTarget = true;
+        _isPlayerMoveCommand = false;
+
+        _agent.isStopped = false;
+        _agent.SetDestination(_targetLocation);
     }
 
     private Vector3 GetMovementDirection()
@@ -165,13 +184,11 @@ public class UnitMovement : NetworkBehaviour
 
         float angle = Vector3.Angle(transform.forward, moveDirection);
 
-        // Ako nije dovoljno okrenut, ne ide napred.
         if (angle > startMovingAngle)
         {
             _agent.speed = 0f;
             return;
         }
-
 
         float rotationFactor = 1f - (angle / startMovingAngle);
         rotationFactor = Mathf.Clamp01(rotationFactor);
@@ -183,6 +200,9 @@ public class UnitMovement : NetworkBehaviour
     {
         if (_unit == null)
             _unit = GetComponent<Unit>();
+
+        if (_unit == null)
+            return;
 
         if (!_unit.BelongsToLocalPlayer())
             return;
@@ -207,22 +227,24 @@ public class UnitMovement : NetworkBehaviour
 
         _targetLocation = targetPosition;
         _hasMoveTarget = true;
+        _isPlayerMoveCommand = true;
 
         _hasPatrol = false;
         _hasCombatLookTarget = false;
 
-        if (_agent.enabled)
+        if (_agent != null && _agent.enabled && _agent.isOnNavMesh)
         {
             _agent.isStopped = false;
             _agent.SetDestination(_targetLocation);
         }
-
-
     }
 
     public void ServerSetCombatLookTarget(Vector3 targetPosition)
     {
         if (!IsServer)
+            return;
+
+        if (_isPlayerMoveCommand)
             return;
 
         _combatLookTarget = targetPosition;
@@ -237,11 +259,21 @@ public class UnitMovement : NetworkBehaviour
         _hasCombatLookTarget = false;
     }
 
-    // Dodao opciju za "patroliranje"/Savo
+    public void ServerClearPlayerMoveCommand()
+    {
+        if (!IsServer)
+            return;
+
+        _isPlayerMoveCommand = false;
+    }
+
     public void RequestPatrol(Vector3 pointA, Vector3 pointB)
     {
         if (_unit == null)
             _unit = GetComponent<Unit>();
+
+        if (_unit == null)
+            return;
 
         if (!_unit.BelongsToLocalPlayer())
             return;
@@ -271,8 +303,11 @@ public class UnitMovement : NetworkBehaviour
 
         _targetLocation = pointB;
         _hasMoveTarget = true;
+        _isPlayerMoveCommand = false;
 
-        if (_agent.enabled)
+        _hasCombatLookTarget = false;
+
+        if (_agent != null && _agent.enabled && _agent.isOnNavMesh)
         {
             _agent.isStopped = false;
             _agent.SetDestination(_targetLocation);
@@ -291,11 +326,13 @@ public class UnitMovement : NetworkBehaviour
         _patrolPointB = Vector3.zero;
     }
 
-    //Dodao sam stop opcije/Savo
     public void RequestStop()
     {
         if (_unit == null)
             _unit = GetComponent<Unit>();
+
+        if (_unit == null)
+            return;
 
         if (!_unit.BelongsToLocalPlayer())
             return;
@@ -311,11 +348,11 @@ public class UnitMovement : NetworkBehaviour
         if (_unit.PlayerClientId.Value != senderClientId)
             return;
 
-        // stop movement
         _hasMoveTarget = false;
+        _isPlayerMoveCommand = false;
         _targetLocation = transform.position;
 
-        if (_agent != null && _agent.enabled)
+        if (_agent != null && _agent.enabled && _agent.isOnNavMesh)
         {
             _agent.isStopped = true;
             _agent.ResetPath();
@@ -331,9 +368,9 @@ public class UnitMovement : NetworkBehaviour
 
         _hasCombatLookTarget = false;
 
-        // stop patrol
         ServerClearPatrol();
     }
+
     public void ServerMoveToAttackRange(Vector3 targetPosition, float desiredRange)
     {
         if (!IsServer)
@@ -341,6 +378,8 @@ public class UnitMovement : NetworkBehaviour
 
         if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh)
             return;
+
+        _isPlayerMoveCommand = false;
 
         Vector3 fromTargetToUnit = transform.position - targetPosition;
         fromTargetToUnit.y = 0f;
@@ -370,6 +409,7 @@ public class UnitMovement : NetworkBehaviour
             return;
 
         _hasMoveTarget = false;
+        _isPlayerMoveCommand = false;
         _targetLocation = transform.position;
 
         if (_agent != null && _agent.enabled && _agent.isOnNavMesh)
@@ -380,4 +420,3 @@ public class UnitMovement : NetworkBehaviour
         }
     }
 }
-

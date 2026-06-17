@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MapData
+public class MapData : MonoBehaviour
 {
 
     [SerializeField] public List<GameObject> StartingBaseLocations;
