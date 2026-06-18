@@ -225,6 +225,32 @@ public class RTSCameraController : MonoBehaviour
 
         return angle;
     }
+    public void SetPivotWorldPosition(Vector3 worldPosition)
+    {
+        worldPosition.y = pivotHeight;
+        transform.position = worldPosition;
+
+        ClampToMap();
+        ApplyCameraTransform();
+    }
+
+    public void MoveToNormalizedMapPosition(Vector2 normalizedMapPosition)
+    {
+        if (mapData == null)
+            return;
+
+        Vector3 worldPosition = mapData.NormalizedMapPositionToWorld(
+            normalizedMapPosition,
+            pivotHeight
+        );
+
+        SetPivotWorldPosition(worldPosition);
+    }
+
+    public Camera GetCamera()
+    {
+        return targetCamera;
+    }
 
     public Vector3 GetPivotPosition()
     {

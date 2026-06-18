@@ -62,6 +62,22 @@ public class MapData : MonoBehaviour
         return StartingBaseLocations[index];
     }
 
+    public Vector2 WorldToNormalizedMapPosition(Vector3 worldPosition)
+    {
+        float x = Mathf.InverseLerp(MapMin.x, MapMax.x, worldPosition.x);
+        float y = Mathf.InverseLerp(MapMin.y, MapMax.y, worldPosition.z);
+
+        return new Vector2(x, y);
+    }
+
+    public Vector3 NormalizedMapPositionToWorld(Vector2 normalizedPosition, float y = 0f)
+    {
+        float worldX = Mathf.Lerp(MapMin.x, MapMax.x, normalizedPosition.x);
+        float worldZ = Mathf.Lerp(MapMin.y, MapMax.y, normalizedPosition.y);
+
+        return new Vector3(worldX, y, worldZ);
+    }
+
     private void OnDrawGizmosSelected()
     {
         Vector3 center = new Vector3(
@@ -75,4 +91,6 @@ public class MapData : MonoBehaviour
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireCube(center, size);
     }
+
+
 }

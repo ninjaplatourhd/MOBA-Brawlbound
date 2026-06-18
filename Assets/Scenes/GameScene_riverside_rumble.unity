@@ -5324,6 +5324,8 @@ GameObject:
   - component: {fileID: 1332696142}
   - component: {fileID: 1332696141}
   - component: {fileID: 1332696143}
+  - component: {fileID: 1332696144}
+  - component: {fileID: 1332696145}
   m_Layer: 5
   m_Name: MiniMapPanel
   m_TagString: Untagged
@@ -5346,6 +5348,7 @@ RectTransform:
   - {fileID: 1666419015}
   - {fileID: 1927927650}
   - {fileID: 284450508}
+  - {fileID: 1726378928}
   m_Father: {fileID: 1834303171}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
@@ -5422,6 +5425,36 @@ MonoBehaviour:
   fallbackColorC: {r: 0, g: 1, b: 0, a: 1}
   fallbackColorD: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   useVisibilityFiltering: 0
+--- !u!114 &1332696144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1332696139}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 06e77dd7b5da169419502a9b1546fd63, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mapData: {fileID: 874637259}
+  cameraController: {fileID: 274071568}
+  minimapRect: {fileID: 1726378928}
+  allowDrag: 1
+--- !u!114 &1332696145
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1332696139}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3312d7739989d2b4e91e6319e9a96d76, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Padding: {x: 0, y: 0, z: 0, w: 0}
+  m_Softness: {x: 0, y: 0}
 --- !u!1 &1378331988
 GameObject:
   m_ObjectHideFlags: 0
@@ -7129,6 +7162,74 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1717381128}
   m_CullTransparentMesh: 1
+--- !u!1 &1726378927
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1726378928}
+  - component: {fileID: 1726378929}
+  - component: {fileID: 1726378930}
+  m_Layer: 5
+  m_Name: CameraViewFrame
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &1726378928
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1726378927}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1332696140}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &1726378929
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1726378927}
+  m_CullTransparentMesh: 1
+--- !u!114 &1726378930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1726378927}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb654adfbd5574e49a552875af3bf548, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mapData: {fileID: 874637259}
+  targetCamera: {fileID: 697090107}
+  minimapRect: {fileID: 1726378928}
+  usePhysicsRaycast: 1
+  groundMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  fallbackGroundY: 0
+  rayDistance: 5000
+  lineColor: {r: 1, g: 1, b: 1, a: 1}
+  lineThickness: 2
 --- !u!1 &1735224101
 GameObject:
   m_ObjectHideFlags: 0
@@ -8209,7 +8310,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
