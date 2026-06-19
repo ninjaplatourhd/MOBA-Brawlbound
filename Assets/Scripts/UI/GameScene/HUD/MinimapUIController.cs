@@ -30,8 +30,8 @@ public class MinimapUIController : MonoBehaviour
     [SerializeField] private Color fallbackColorC = Color.green;
     [SerializeField] private Color fallbackColorD = Color.yellow;
 
-    [Header("Future")]
-    [SerializeField] private bool useVisibilityFiltering = false;
+    [Header("Known Enemy Building Visual")]
+    [SerializeField] private float knownBuildingAlpha = 0.45f;
 
     private readonly Dictionary<GameObject, MinimapIconUI> unitIcons = new Dictionary<GameObject, MinimapIconUI>();
     private readonly Dictionary<GameObject, MinimapIconUI> buildingIcons = new Dictionary<GameObject, MinimapIconUI>();
@@ -48,11 +48,12 @@ public class MinimapUIController : MonoBehaviour
     {
         refreshTimer += Time.deltaTime;
 
-        if (refreshTimer >= refreshInterval)
-        {
-            refreshTimer = 0f;
-            RefreshMinimap();
-        }
+        if (refreshTimer < refreshInterval)
+            return;
+
+        refreshTimer = 0f;
+
+        RefreshMinimap();
     }
 
     private void RefreshMinimap()
@@ -70,7 +71,7 @@ public class MinimapUIController : MonoBehaviour
             ? UnitManager.instance.AllUnitsList
             : null;
 
-        SyncIcons(units, unitIcons, unitIconPrefab);
+        SyncIcons(units, unitIcons, unitIconPrefab, true);
         UpdateIconPositions(unitIcons, true);
     }
 
@@ -80,14 +81,15 @@ public class MinimapUIController : MonoBehaviour
             ? BuildingManager.instance.AllBuildingsList
             : null;
 
-        SyncIcons(buildings, buildingIcons, buildingIconPrefab);
+        SyncIcons(buildings, buildingIcons, buildingIconPrefab, false);
         UpdateIconPositions(buildingIcons, false);
     }
 
     private void SyncIcons(
         List<GameObject> sourceObjects,
         Dictionary<GameObject, MinimapIconUI> existingIcons,
-        MinimapIconUI prefab)
+        MinimapIconUI prefab,
+        bool isUnit)
     {
         List<GameObject> toRemove = new List<GameObject>();
 
@@ -95,7 +97,7 @@ public class MinimapUIController : MonoBehaviour
         {
             GameObject obj = pair.Key;
 
-            if (obj == null || !ShouldShowObject(obj) || sourceObjects == null || !sourceObjects.Contains(obj))
+            if (obj == null || sourceObjects == null || !sourceObjects.Contains(obj) || !ShouldShowObject(obj, isUnit))
             {
                 if (pair.Value != null)
                     Destroy(pair.Value.gameObject);
@@ -104,9 +106,9 @@ public class MinimapUIController : MonoBehaviour
             }
         }
 
-        foreach (GameObject key in toRemove)
+        foreach (GameObject obj in toRemove)
         {
-            existingIcons.Remove(key);
+            existingIcons.Remove(obj);
         }
 
         if (sourceObjects == null || prefab == null || iconContainer == null)
@@ -117,7 +119,7 @@ public class MinimapUIController : MonoBehaviour
             if (obj == null)
                 continue;
 
-            if (!ShouldShowObject(obj))
+            if (!ShouldShowObject(obj, isUnit))
                 continue;
 
             if (existingIcons.ContainsKey(obj))
@@ -145,7 +147,7 @@ public class MinimapUIController : MonoBehaviour
             if (obj == null || icon == null)
                 continue;
 
-            Vector2 normalized = WorldToNormalizedMapPosition(obj.transform.position);
+            Vector2 normalized = mapData.WorldToNormalizedMapPosition(obj.transform.position);
 
             normalized.x = Mathf.Clamp01(normalized.x);
             normalized.y = Mathf.Clamp01(normalized.y);
@@ -156,7 +158,9 @@ public class MinimapUIController : MonoBehaviour
             );
 
             icon.SetAnchoredPosition(anchoredPosition);
-            icon.SetColor(GetObjectColor(obj));
+
+            Color color = GetObjectColor(obj, isUnit);
+            icon.SetColor(color);
 
             if (isUnit)
                 icon.SetSize(new Vector2(8f, 8f));
@@ -165,39 +169,50 @@ public class MinimapUIController : MonoBehaviour
         }
     }
 
-    private Vector2 WorldToNormalizedMapPosition(Vector3 worldPosition)
+    private bool ShouldShowObject(GameObject obj, bool isUnit)
     {
-        return mapData.WorldToMap01(worldPosition);
-    }
-
-    private bool ShouldShowObject(GameObject obj)
-    {
-        if (obj == null)
-            return false;
-
         NetworkObject networkObject = obj.GetComponent<NetworkObject>();
+
         if (networkObject != null && !networkObject.IsSpawned)
             return false;
 
-        if (useVisibilityFiltering)
-        {
-            // Za kasnije:
-            // ovde ces vezati proveru za fog of war / vision sistem
-            // trenutno vracamo true
-            return true;
-        }
+        FogOfWar fog = FogOfWar.Instance;
 
-        return true;
+        if (fog == null)
+            return true;
+
+        if (isUnit)
+            return fog.ShouldShowUnit(obj);
+
+        return fog.ShouldShowBuilding(obj);
     }
 
-    private Color GetObjectColor(GameObject obj)
+    private Color GetObjectColor(GameObject obj, bool isUnit)
     {
-        IOwnedObject ownedObject = obj.GetComponent(typeof(IOwnedObject)) as IOwnedObject;
+        IOwnedObject ownedObject = obj.GetComponent<IOwnedObject>();
 
         if (ownedObject == null)
             return Color.white;
 
-        return GetPlayerColor(ownedObject.OwnerClientId);
+        Color color = GetPlayerColor(ownedObject.OwnerClientId);
+
+        FogOfWar fog = FogOfWar.Instance;
+
+        if (fog != null && !isUnit)
+        {
+            bool friendly = fog.IsFriendly(ownedObject);
+            bool visibleNow = fog.IsVisibleNow(obj.transform.position);
+            bool knownBuilding = fog.IsKnownEnemyBuilding(obj);
+
+            if (!friendly && knownBuilding && !visibleNow)
+            {
+                color.a = knownBuildingAlpha;
+            }
+        }
+
+        color.a = Mathf.Clamp01(color.a);
+
+        return color;
     }
 
     private Color GetPlayerColor(ulong clientId)
@@ -205,18 +220,37 @@ public class MinimapUIController : MonoBehaviour
         for (int i = 0; i < playerColors.Count; i++)
         {
             if (playerColors[i].ClientId == clientId)
-                return playerColors[i].Color;
+            {
+                Color color = playerColors[i].Color;
+                color.a = 1f;
+                return color;
+            }
         }
+
+        Color fallbackColor;
 
         int fallbackIndex = (int)(clientId % 4);
 
         switch (fallbackIndex)
         {
-            case 0: return fallbackColorA;
-            case 1: return fallbackColorB;
-            case 2: return fallbackColorC;
-            case 3: return fallbackColorD;
-            default: return Color.white;
+            case 0:
+                fallbackColor = fallbackColorA;
+                break;
+            case 1:
+                fallbackColor = fallbackColorB;
+                break;
+            case 2:
+                fallbackColor = fallbackColorC;
+                break;
+            case 3:
+                fallbackColor = fallbackColorD;
+                break;
+            default:
+                fallbackColor = Color.white;
+                break;
         }
+
+        fallbackColor.a = 1f;
+        return fallbackColor;
     }
 }

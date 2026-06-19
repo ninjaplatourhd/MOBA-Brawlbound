@@ -7,6 +7,9 @@ public class UnitData : MonoBehaviour
     public string UnitId = "super_heavy_tank_malj";
     public string DisplayName = "Super Heavy Tank (Malj)";
 
+    [Header("Vision")]
+    public float SightRadius = 40f;
+
     [Header("Combat")]
     public bool MovesGun = false;
     public float Range = 50f;
