@@ -1,6 +1,5 @@
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.AI;
 
 public class WorkerGathering : NetworkBehaviour
 {
@@ -22,12 +21,25 @@ public class WorkerGathering : NetworkBehaviour
     [SerializeField] private float gatherRateMultiplier = 1f;
     [SerializeField] private float gatherRangeMultiplier = 1f;
 
+    [Header("Auto Gather")]
+    [SerializeField] private bool autoFindNextCrystal = true;
+    [SerializeField] private float autoFindRadiusFallback = 40f;
+
+    [Header("Laser Pulse")]
+    [SerializeField] private Color laserColorA = Color.cyan;
+    [SerializeField] private Color laserColorB = Color.white;
+    [SerializeField] private float laserMinWidth = 0.04f;
+    [SerializeField] private float laserMaxWidth = 0.12f;
+    [SerializeField] private float laserPulseSpeed = 8f;
+
     private Unit unit;
     private UnitMovement unitMovement;
     private UnitCombat unitCombat;
-    private NavMeshAgent agent;
 
     private MineralCrystal currentCrystal;
+
+    private bool hasGatherOrder;
+    private bool stoppedForGathering;
 
     private float gatherTimer;
     private float repathTimer;
@@ -49,7 +61,6 @@ public class WorkerGathering : NetworkBehaviour
         unit = GetComponent<Unit>();
         unitMovement = GetComponent<UnitMovement>();
         unitCombat = GetComponent<UnitCombat>();
-        agent = GetComponent<NavMeshAgent>();
 
         SetupLaser();
     }
@@ -116,22 +127,7 @@ public class WorkerGathering : NetworkBehaviour
         if (crystal == null || crystal.IsDepleted)
             return;
 
-        currentCrystal = crystal;
-        gatherTimer = 0f;
-        repathTimer = 0f;
-
-        if (unitCombat != null)
-            unitCombat.ServerClearAttackTarget();
-
-        if (unitMovement != null)
-        {
-            unitMovement.ServerClearCombatLookTarget();
-            unitMovement.ServerClearPlayerMoveCommand();
-        }
-
-        laserActive.Value = false;
-
-        ServerMoveTowardsCrystal();
+        ServerStartGathering(crystal);
     }
 
     [ServerRpc(RequireOwnership = false)]
@@ -153,9 +149,15 @@ public class WorkerGathering : NetworkBehaviour
 
     private void ServerUpdateGathering()
     {
+        if (!hasGatherOrder)
+        {
+            laserActive.Value = false;
+            return;
+        }
+
         if (currentCrystal == null || currentCrystal.IsDepleted)
         {
-            ServerCancelGathering();
+            ServerTryContinueToNextCrystalOrStop();
             return;
         }
 
@@ -165,6 +167,7 @@ public class WorkerGathering : NetworkBehaviour
         if (distance > finalGatherRange)
         {
             laserActive.Value = false;
+            stoppedForGathering = false;
 
             repathTimer -= Time.deltaTime;
 
@@ -177,24 +180,15 @@ public class WorkerGathering : NetworkBehaviour
             return;
         }
 
-        if (agent != null)
+        if (!stoppedForGathering)
         {
-            agent.ResetPath();
-            agent.velocity = Vector3.zero;
+            if (unitMovement != null)
+                unitMovement.ServerStopMovementOnly();
+
+            stoppedForGathering = true;
         }
 
-        Vector3 lookDirection = currentCrystal.transform.position - transform.position;
-        lookDirection.y = 0f;
-
-        if (lookDirection.sqrMagnitude > 0.01f)
-        {
-            Quaternion targetRotation = Quaternion.LookRotation(lookDirection.normalized);
-            transform.rotation = Quaternion.RotateTowards(
-                transform.rotation,
-                targetRotation,
-                360f * Time.deltaTime
-            );
-        }
+        RotateTowardsCrystal();
 
         laserEndPosition.Value = currentCrystal.SiphonTargetPosition;
         laserActive.Value = true;
@@ -215,7 +209,7 @@ public class WorkerGathering : NetworkBehaviour
 
         if (gatheredAmount <= 0)
         {
-            ServerCancelGathering();
+            ServerTryContinueToNextCrystalOrStop();
             return;
         }
 
@@ -226,6 +220,73 @@ public class WorkerGathering : NetworkBehaviour
                 gatheredAmount
             );
         }
+
+        if (currentCrystal == null || currentCrystal.IsDepleted)
+        {
+            ServerTryContinueToNextCrystalOrStop();
+        }
+    }
+
+    private void ServerStartGathering(MineralCrystal crystal)
+    {
+        if (!IsServer)
+            return;
+
+        if (crystal == null || crystal.IsDepleted)
+            return;
+
+        hasGatherOrder = true;
+
+        currentCrystal = crystal;
+        gatherTimer = 0f;
+        repathTimer = 0f;
+        stoppedForGathering = false;
+
+        laserActive.Value = false;
+
+        if (unitCombat != null)
+            unitCombat.ServerClearAttackTarget();
+
+        if (unitMovement != null)
+        {
+            unitMovement.ServerClearPatrol();
+            unitMovement.ServerClearCombatLookTarget();
+            unitMovement.ServerClearPlayerMoveCommand();
+        }
+
+        ServerMoveTowardsCrystal();
+    }
+
+    public void ServerCancelGathering()
+    {
+        if (!IsServer)
+            return;
+
+        hasGatherOrder = false;
+
+        currentCrystal = null;
+        gatherTimer = 0f;
+        repathTimer = 0f;
+        stoppedForGathering = false;
+
+        laserActive.Value = false;
+    }
+
+    private void ServerTryContinueToNextCrystalOrStop()
+    {
+        currentCrystal = null;
+        stoppedForGathering = false;
+        gatherTimer = 0f;
+        repathTimer = 0f;
+        laserActive.Value = false;
+
+        if (hasGatherOrder && autoFindNextCrystal && TryFindNextCrystal(out MineralCrystal nextCrystal))
+        {
+            ServerStartGathering(nextCrystal);
+            return;
+        }
+
+        ServerCancelGathering();
     }
 
     private void ServerMoveTowardsCrystal()
@@ -233,27 +294,75 @@ public class WorkerGathering : NetworkBehaviour
         if (currentCrystal == null)
             return;
 
-        if (agent == null)
-            agent = GetComponent<NavMeshAgent>();
+        if (unitMovement == null)
+            unitMovement = GetComponent<UnitMovement>();
 
-        if (agent == null)
+        if (unitMovement == null)
             return;
 
-        Vector3 targetPosition = currentCrystal.transform.position;
+        float finalGatherRange = GetFinalGatherRange();
 
-        if (NavMesh.SamplePosition(targetPosition, out NavMeshHit hit, 6f, NavMesh.AllAreas))
-        {
-            agent.isStopped = false;
-            agent.SetDestination(hit.position);
-        }
+        unitMovement.ServerMoveToGatherRange(
+            currentCrystal.transform.position,
+            finalGatherRange * 0.8f
+        );
     }
 
-    private void ServerCancelGathering()
+    private void RotateTowardsCrystal()
     {
-        currentCrystal = null;
-        gatherTimer = 0f;
-        repathTimer = 0f;
-        laserActive.Value = false;
+        if (currentCrystal == null)
+            return;
+
+        Vector3 lookDirection = currentCrystal.transform.position - transform.position;
+        lookDirection.y = 0f;
+
+        if (lookDirection.sqrMagnitude <= 0.01f)
+            return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(lookDirection.normalized);
+
+        transform.rotation = Quaternion.RotateTowards(
+            transform.rotation,
+            targetRotation,
+            360f * Time.deltaTime
+        );
+    }
+
+    private bool TryFindNextCrystal(out MineralCrystal nextCrystal)
+    {
+        nextCrystal = null;
+
+        float searchRadius = GetAutoFindRadius();
+        float bestDistanceSqr = searchRadius * searchRadius;
+
+        foreach (MineralCrystal crystal in MineralCrystal.AllCrystals)
+        {
+            if (crystal == null || crystal.IsDepleted)
+                continue;
+
+            if (crystal == currentCrystal)
+                continue;
+
+            float distanceSqr = (crystal.transform.position - transform.position).sqrMagnitude;
+
+            if (distanceSqr < bestDistanceSqr)
+            {
+                bestDistanceSqr = distanceSqr;
+                nextCrystal = crystal;
+            }
+        }
+
+        return nextCrystal != null;
+    }
+
+    private float GetAutoFindRadius()
+    {
+        UnitData unitData = GetComponent<UnitData>();
+
+        if (unitData != null && unitData.SightRadius > 0f)
+            return unitData.SightRadius;
+
+        return autoFindRadiusFallback;
     }
 
     private float GetFinalGatherRate()
@@ -304,6 +413,17 @@ public class WorkerGathering : NetworkBehaviour
 
         if (!shouldShowLaser)
             return;
+
+        float pulse = (Mathf.Sin(Time.time * laserPulseSpeed) + 1f) * 0.5f;
+
+        float width = Mathf.Lerp(laserMinWidth, laserMaxWidth, pulse);
+        Color color = Color.Lerp(laserColorA, laserColorB, pulse);
+
+        siphonLaser.startWidth = width;
+        siphonLaser.endWidth = width * 0.65f;
+
+        siphonLaser.startColor = color;
+        siphonLaser.endColor = color;
 
         Vector3 startPosition = laserOrigin != null
             ? laserOrigin.position

@@ -715,7 +715,7 @@ LineRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 2ac9ec343c02ef24d8e4577eaf1b9f86, type: 2}
+  - {fileID: 2100000, guid: 9461ebf4d7af6464d910fe5e0fc8e558, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -759,7 +759,7 @@ LineRenderer:
       m_RotationOrder: 4
     colorGradient:
       serializedVersion: 2
-      key0: {r: 1, g: 1, b: 1, a: 1}
+      key0: {r: 0.5849056, g: 0.0027589954, b: 0.0027589954, a: 1}
       key1: {r: 1, g: 1, b: 1, a: 1}
       key2: {r: 0, g: 0, b: 0, a: 0}
       key3: {r: 0, g: 0, b: 0, a: 0}
@@ -784,7 +784,7 @@ LineRenderer:
       atime6: 0
       atime7: 0
       m_Mode: 0
-      m_ColorSpace: -1
+      m_ColorSpace: 0
       m_NumColorKeys: 2
       m_NumAlphaKeys: 2
     numCornerVertices: 0
@@ -817,7 +817,14 @@ MonoBehaviour:
   repathInterval: 0.25
   siphonLaser: {fileID: 764187635198901745}
   laserOrigin: {fileID: 5329229518390452530}
-  laserColor: {r: 0.41320214, g: 0.18943575, b: 0.9339623, a: 1}
+  laserColor: {r: 0, g: 1, b: 1, a: 1}
   laserWidth: 0.08
   gatherRateMultiplier: 1
   gatherRangeMultiplier: 1
+  autoFindNextCrystal: 1
+  autoFindRadiusFallback: 40
+  laserColorA: {r: 0, g: 1, b: 1, a: 1}
+  laserColorB: {r: 1, g: 1, b: 1, a: 1}
+  laserMinWidth: 0.04
+  laserMaxWidth: 0.12
+  laserPulseSpeed: 8

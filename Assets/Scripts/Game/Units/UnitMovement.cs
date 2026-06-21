@@ -419,4 +419,42 @@ public class UnitMovement : NetworkBehaviour
             _agent.speed = 0f;
         }
     }
+
+    public void ServerMoveToGatherRange(Vector3 targetPosition, float desiredRange)
+    {
+        if (!IsServer)
+            return;
+
+        if (_agent == null || !_agent.enabled || !_agent.isOnNavMesh)
+            return;
+
+        _isPlayerMoveCommand = false;
+
+        Vector3 fromTargetToUnit = transform.position - targetPosition;
+        fromTargetToUnit.y = 0f;
+
+        if (fromTargetToUnit.sqrMagnitude < 0.01f)
+            fromTargetToUnit = -transform.forward;
+
+        Vector3 gatherPosition = targetPosition + fromTargetToUnit.normalized * desiredRange;
+
+        if (NavMesh.SamplePosition(gatherPosition, out NavMeshHit hit, 6f, NavMesh.AllAreas))
+        {
+            gatherPosition = hit.position;
+        }
+
+        _targetLocation = gatherPosition;
+        _hasMoveTarget = true;
+
+        _hasPatrol = false;
+        _hasCombatLookTarget = false;
+
+        _agent.isStopped = false;
+        _agent.stoppingDistance = 0.2f;
+
+        if (!_agent.hasPath || Vector3.Distance(_agent.destination, gatherPosition) > 1f)
+        {
+            _agent.SetDestination(gatherPosition);
+        }
+    }
 }

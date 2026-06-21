@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -8,6 +9,8 @@ public class MineralCrystal : NetworkBehaviour
 
     [Header("Visual")]
     [SerializeField] private Transform siphonTargetPoint;
+
+    public static readonly List<MineralCrystal> AllCrystals = new List<MineralCrystal>();
 
     public NetworkVariable<int> RemainingMinerals = new NetworkVariable<int>(
         0,
@@ -30,11 +33,24 @@ public class MineralCrystal : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        if (!AllCrystals.Contains(this))
+            AllCrystals.Add(this);
+
         if (!IsServer)
             return;
 
         if (RemainingMinerals.Value <= 0)
             RemainingMinerals.Value = startingMinerals;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        AllCrystals.Remove(this);
+    }
+
+    private void OnDestroy()
+    {
+        AllCrystals.Remove(this);
     }
 
     public int ServerTakeMinerals(int requestedAmount)
