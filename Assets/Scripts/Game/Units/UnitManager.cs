@@ -21,6 +21,8 @@ public class UnitManager : MonoBehaviour
     [SerializeField]
     private string _player;
 
+    [SerializeField] private LayerMask resourceMask;
+
     public GameObject groundMarker;
 
     // upravljanje dugmadima za jedinice, da li su u move, attack ili patrol modu
@@ -100,6 +102,10 @@ public class UnitManager : MonoBehaviour
             {
                 return;
             }
+
+            if (TryHandleResourceRightClick(ray))
+                return;
+
 
             if (Physics.Raycast(ray, out RaycastHit targetHit, Mathf.Infinity, _clickable))
             {
@@ -219,6 +225,8 @@ public class UnitManager : MonoBehaviour
             if (unitObj == null)
                 continue;
 
+            CancelGatheringIfWorker(unitObj);
+
             if (unitObj.TryGetComponent<UnitCombat>(out UnitCombat combat))
             {
                 combat.RequestAttack(targetObject);
@@ -267,6 +275,8 @@ public class UnitManager : MonoBehaviour
 
             Vector3 targetPosition = targetPoint + positionDiff;
 
+            CancelGatheringIfWorker(unitObj);
+
             if (unitObj.TryGetComponent<UnitMovement>(out UnitMovement movement))
             {
                 movement.RequestMove(targetPosition);
@@ -289,6 +299,8 @@ public class UnitManager : MonoBehaviour
 
         foreach (var unitObj in SelectedUnits)
         {
+            CancelGatheringIfWorker(unitObj);
+
             if (unitObj.TryGetComponent<UnitMovement>(out UnitMovement movement))
             {
                 movement.RequestPatrol(_patrolA, point);
@@ -311,6 +323,8 @@ public class UnitManager : MonoBehaviour
             if (unitObj == null)
                 continue;
 
+            CancelGatheringIfWorker(unitObj);
+
             if (unitObj.TryGetComponent<UnitCombat>(out UnitCombat combat))
             {
                 combat.RequestGuard();
@@ -320,5 +334,46 @@ public class UnitManager : MonoBehaviour
         CurrentCommandMode = CommandMode.None;
     }
 
+    private bool TryHandleResourceRightClick(Ray ray)
+    {
+        if (!Physics.Raycast(ray, out RaycastHit hit, 500f, resourceMask))
+            return false;
+
+        MineralCrystal crystal = hit.collider.GetComponentInParent<MineralCrystal>();
+
+        if (crystal == null)
+            return false;
+
+        bool commandSent = false;
+
+        foreach (GameObject selectedUnit in SelectedUnits)
+        {
+            if (selectedUnit == null)
+                continue;
+
+            WorkerGathering workerGathering = selectedUnit.GetComponent<WorkerGathering>();
+
+            if (workerGathering == null)
+                continue;
+
+
+
+            workerGathering.RequestGather(crystal);
+            commandSent = true;
+        }
+
+        return commandSent;
+    }
+
+    private void CancelGatheringIfWorker(GameObject unitObj)
+    {
+        if (unitObj == null)
+            return;
+
+        if (unitObj.TryGetComponent<WorkerGathering>(out WorkerGathering gathering))
+        {
+            gathering.RequestCancelGathering();
+        }
+    }
 
 }

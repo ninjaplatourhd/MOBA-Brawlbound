@@ -85,6 +85,11 @@ public class HUDCommandPanel : MonoBehaviour
 
         foreach (var obj in units)
         {
+            if (obj.TryGetComponent<WorkerGathering>(out WorkerGathering gathering))
+            {
+                gathering.RequestCancelGathering();
+            }
+
             if (obj.TryGetComponent<UnitMovement>(out UnitMovement movement))
             {
                 movement.RequestStop();
