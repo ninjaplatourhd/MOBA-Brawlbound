@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -19,12 +20,12 @@ public class ProductionBuilding : NetworkBehaviour
 
         BuildQueue = new NetworkList<BuildQueueItemNet>();
     }
-    /*
-    public override void OnNetworkDespawn()
+
+    private void OnDestroy()
     {
-        BuildQueue.Dispose();
+        if (BuildQueue != null)
+            BuildQueue.Dispose();
     }
-    */
 
     private void Update()
     {
@@ -34,13 +35,46 @@ public class ProductionBuilding : NetworkBehaviour
         ServerUpdateQueue();
     }
 
+    public List<BuildableUnit> GetBuildableUnits()
+    {
+        if (data == null)
+            data = GetComponent<BuildingData>();
+
+        if (data == null || data.BuildableUnits == null)
+            return new List<BuildableUnit>();
+
+        return data.BuildableUnits;
+    }
+
+    public List<BuildableUpgrade> GetBuildableUpgrades()
+    {
+        if (data == null)
+            data = GetComponent<BuildingData>();
+
+        if (data == null || data.BuildableUpgrades == null)
+            return new List<BuildableUpgrade>();
+
+        return data.BuildableUpgrades;
+    }
+
     public void RequestBuildUnit(string unitId)
     {
+        Debug.Log($"RequestBuildUnit pozvan za: {unitId}");
+
         if (building == null)
             building = GetComponent<Building>();
 
-        if (!building.BelongsToLocalPlayer())
+        if (building == null)
+        {
+            Debug.LogWarning("RequestBuildUnit failed: building je null.");
             return;
+        }
+
+        if (!building.BelongsToLocalPlayer())
+        {
+            Debug.LogWarning("RequestBuildUnit failed: building ne pripada lokalnom playeru.");
+            return;
+        }
 
         RequestBuildUnitServerRpc(unitId);
     }
@@ -50,6 +84,12 @@ public class ProductionBuilding : NetworkBehaviour
     {
         ulong senderClientId = rpcParams.Receive.SenderClientId;
 
+        if (building == null)
+            building = GetComponent<Building>();
+
+        if (building == null)
+            return;
+
         if (building.PlayerClientId.Value != senderClientId)
             return;
 
@@ -57,14 +97,43 @@ public class ProductionBuilding : NetworkBehaviour
 
         if (buildableUnit == null)
         {
-            Debug.LogWarning($"{gameObject.name} ne može da builduje unit: {unitId}");
+            Debug.LogWarning($"{gameObject.name} ne može da pravi unit: {unitId}");
             return;
         }
+
+        if (PlayerEconomyManager.Instance == null)
+        {
+            Debug.LogWarning("PlayerEconomyManager ne postoji u sceni.");
+            return;
+        }
+
+        if (!PlayerEconomyManager.Instance.TryGetPlayerState(senderClientId, out PlayerGameData economyData))
+            return;
+
+        if (economyData.TechTier < buildableUnit.RequiredTechTier)
+        {
+            Debug.LogWarning($"Nemaš potreban tech tier za {buildableUnit.DisplayName}.");
+            return;
+        }
+
+        if (!PlayerEconomyManager.Instance.CanAfford(
+                senderClientId,
+                buildableUnit.MineralCost,
+                buildableUnit.PowerUpkeep))
+        {
+            Debug.LogWarning($"Nemaš resurse za {buildableUnit.DisplayName}.");
+            return;
+        }
+
+        if (!PlayerEconomyManager.Instance.TrySpendMinerals(senderClientId, buildableUnit.MineralCost))
+            return;
 
         BuildQueue.Add(new BuildQueueItemNet
         {
             UnitId = new FixedString64Bytes(buildableUnit.UnitId),
             DisplayName = new FixedString64Bytes(buildableUnit.DisplayName),
+            MineralCost = buildableUnit.MineralCost,
+            PowerUpkeep = buildableUnit.PowerUpkeep,
             BuildTime = buildableUnit.BuildTime,
             RemainingTime = buildableUnit.BuildTime
         });
@@ -77,6 +146,9 @@ public class ProductionBuilding : NetworkBehaviour
         if (building == null)
             building = GetComponent<Building>();
 
+        if (building == null)
+            return;
+
         if (!building.BelongsToLocalPlayer())
             return;
 
@@ -88,11 +160,22 @@ public class ProductionBuilding : NetworkBehaviour
     {
         ulong senderClientId = rpcParams.Receive.SenderClientId;
 
+        if (building == null)
+            building = GetComponent<Building>();
+
+        if (building == null)
+            return;
+
         if (building.PlayerClientId.Value != senderClientId)
             return;
 
         if (index < 0 || index >= BuildQueue.Count)
             return;
+
+        BuildQueueItemNet item = BuildQueue[index];
+
+        if (PlayerEconomyManager.Instance != null)
+            PlayerEconomyManager.Instance.AddMinerals(senderClientId, item.MineralCost);
 
         BuildQueue.RemoveAt(index);
     }
@@ -112,14 +195,26 @@ public class ProductionBuilding : NetworkBehaviour
             return;
         }
 
+        ulong ownerClientId = building.PlayerClientId.Value;
+
+        if (PlayerEconomyManager.Instance != null)
+        {
+            if (!PlayerEconomyManager.Instance.CanAfford(ownerClientId, 0, currentItem.PowerUpkeep))
+            {
+                currentItem.RemainingTime = 0.1f;
+                BuildQueue[0] = currentItem;
+                return;
+            }
+        }
+
         string completedUnitId = currentItem.UnitId.ToString();
 
         BuildQueue.RemoveAt(0);
 
-        SpawnCompletedUnit(completedUnitId);
+        SpawnCompletedUnit(completedUnitId, currentItem.PowerUpkeep);
     }
 
-    private void SpawnCompletedUnit(string unitId)
+    private void SpawnCompletedUnit(string unitId, int powerUpkeep)
     {
         BuildableUnit buildableUnit = FindBuildableUnit(unitId);
 
@@ -129,14 +224,12 @@ public class ProductionBuilding : NetworkBehaviour
             return;
         }
 
-        // Bio bug, spawn point bi se zakucao sa zgradom ako je spawnPoint null, sada se spawnuje ispred zgrade/Savo
         Vector3 basePosition = spawnPoint != null
-        ? spawnPoint.position
-        : transform.position + transform.forward * 4f;
+            ? spawnPoint.position
+            : transform.position + transform.forward * 4f;
 
         Vector3 spawnPosition = basePosition;
 
-        // snap to NavMesh
         if (NavMesh.SamplePosition(basePosition, out NavMeshHit hit, 5f, NavMesh.AllAreas))
         {
             spawnPosition = hit.position;
@@ -164,6 +257,10 @@ public class ProductionBuilding : NetworkBehaviour
         }
 
         unit.PlayerClientId.Value = building.PlayerClientId.Value;
+
+        PowerConsumer powerConsumer = unitObject.GetComponent<PowerConsumer>();
+        if (powerConsumer != null)
+            powerConsumer.SetRuntimePowerUpkeep(powerUpkeep);
 
         netObj.Spawn();
 

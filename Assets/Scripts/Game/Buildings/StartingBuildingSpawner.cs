@@ -5,6 +5,7 @@ using UnityEngine;
 public class StartingBuildingSpawner : NetworkBehaviour
 {
     [SerializeField] private GameObject commandCenterPrefab;
+    [SerializeField] private MapData mapdata;
 
     private readonly HashSet<ulong> spawnedForClients = new HashSet<ulong>();
 
@@ -77,18 +78,11 @@ public class StartingBuildingSpawner : NetworkBehaviour
 
     private Vector3 GetStartPosition(ulong clientId)
     {
-        if (clientId == 0)
-            return new Vector3(100, 0, 100);
+        int id = (int)clientId;
+        if (mapdata.StartingBaseLocations.Count < id)
+            return new Vector3(0, 0, 0);
+        else
+            return mapdata.StartingBaseLocations[(int)clientId].transform.position;
 
-        if (clientId == 1)
-            return new Vector3(50, 0, 100);
-
-        if (clientId == 2)
-            return new Vector3(100, 0, 50);
-
-        if (clientId == 3)
-            return new Vector3(50, 0, 50);
-
-        return new Vector3(0, 0, 0);
     }
 }

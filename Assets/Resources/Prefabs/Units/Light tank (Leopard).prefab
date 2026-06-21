@@ -253,7 +253,7 @@ RectTransform:
   m_GameObject: {fileID: 8809466422214379910}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.02, y: 0.0019999999, z: 0.02}
+  m_LocalScale: {x: 0.0626243, y: 0.0066617634, z: 0.02}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2495090284689009217}
@@ -560,6 +560,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1124999471166511132}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9184462864771279808}
   m_SourcePrefab: {fileID: 100100000, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
 --- !u!4 &5441640128892152623 stripped
 Transform:
@@ -728,6 +731,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UnitId: light_tank_leopard
   DisplayName: Light tank (Leopard)
+  SightRadius: 40
   MovesGun: 1
   Range: 20
   DamageBonus: 0
@@ -776,6 +780,20 @@ MonoBehaviour:
   turretYawOffset: 0
   turretYawSyncThreshold: 0.05
   debugCombat: 0
+--- !u!114 &9184462864771279808
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6336712478654482595}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c04646a87ad23514a8ff8c22f93ab72b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  powerUpkeep: 5
 --- !u!4 &6682029861601284633 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}

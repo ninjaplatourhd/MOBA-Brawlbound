@@ -6,6 +6,10 @@ public struct BuildQueueItemNet : INetworkSerializable, IEquatable<BuildQueueIte
 {
     public FixedString64Bytes UnitId;
     public FixedString64Bytes DisplayName;
+
+    public int MineralCost;
+    public int PowerUpkeep;
+
     public float BuildTime;
     public float RemainingTime;
 
@@ -13,15 +17,19 @@ public struct BuildQueueItemNet : INetworkSerializable, IEquatable<BuildQueueIte
     {
         serializer.SerializeValue(ref UnitId);
         serializer.SerializeValue(ref DisplayName);
+        serializer.SerializeValue(ref MineralCost);
+        serializer.SerializeValue(ref PowerUpkeep);
         serializer.SerializeValue(ref BuildTime);
         serializer.SerializeValue(ref RemainingTime);
     }
 
     public bool Equals(BuildQueueItemNet other)
     {
-        return UnitId.Equals(other.UnitId) &&
-               DisplayName.Equals(other.DisplayName) &&
-               BuildTime.Equals(other.BuildTime) &&
-               RemainingTime.Equals(other.RemainingTime);
+        return UnitId.Equals(other.UnitId)
+            && DisplayName.Equals(other.DisplayName)
+            && MineralCost == other.MineralCost
+            && PowerUpkeep == other.PowerUpkeep
+            && BuildTime.Equals(other.BuildTime)
+            && RemainingTime.Equals(other.RemainingTime);
     }
 }

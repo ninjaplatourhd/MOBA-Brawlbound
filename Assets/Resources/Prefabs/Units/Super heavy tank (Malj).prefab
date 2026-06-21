@@ -490,6 +490,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
       insertIndex: -1
       addedObject: {fileID: -4312971399507570870}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4505572660694283038}
   m_SourcePrefab: {fileID: 100100000, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
 --- !u!1 &7338278125657640901 stripped
 GameObject:
@@ -531,7 +534,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3134993084
+  GlobalObjectIdHash: 1885601786
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -653,6 +656,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UnitId: super_heavy_tank_malj
   DisplayName: Super Heavy Tank (Malj)
+  SightRadius: 40
   MovesGun: 0
   Range: 30
   DamageBonus: 0
@@ -701,6 +705,20 @@ MonoBehaviour:
   turretYawOffset: 0
   turretYawSyncThreshold: 0.05
   debugCombat: 0
+--- !u!114 &4505572660694283038
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7338278125657640901}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c04646a87ad23514a8ff8c22f93ab72b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  powerUpkeep: 15
 --- !u!4 &7970559625255163263 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}

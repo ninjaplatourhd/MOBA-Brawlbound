@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 134392622269041477}
   serializedVersion: 2
   m_LocalRotation: {x: 0.5, y: -0.5, z: 0.5, w: 0.5}
-  m_LocalPosition: {x: 0, y: 0.582, z: 0}
+  m_LocalPosition: {x: 0, y: -0.06, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 1
   m_Children: []
@@ -411,7 +411,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: ae32fa818cb684b4d9466a03146dd03e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.5
+      value: 1.02
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: ae32fa818cb684b4d9466a03146dd03e, type: 3}
       propertyPath: m_LocalPosition.z
@@ -492,6 +492,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ae32fa818cb684b4d9466a03146dd03e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2073372461028807107}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: ae32fa818cb684b4d9466a03146dd03e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: -3232938900561344165}
   m_SourcePrefab: {fileID: 100100000, guid: ae32fa818cb684b4d9466a03146dd03e, type: 3}
 --- !u!1 &6009145306809327539 stripped
 GameObject:
@@ -557,14 +560,29 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   BuildingId: komandni_centar
   DisplayName: Komandni Centar
+  SightRadius: 60
   MaxHealth: 1000
   Armor: 20
   CanBuildUnits: 1
   BuildableUnits:
   - UnitId: worker
     DisplayName: Worker
+    Icon: {fileID: 21300000, guid: c0dbfec0f531cae49a9f23afc5289242, type: 3}
     UnitPrefab: {fileID: 1810380548070735579, guid: d6a30e840fef056428feece069db867d, type: 3}
+    MineralCost: 50
+    PowerCost: 10
+    PowerUpkeep: 1
+    RequiredTechTier: 1
     BuildTime: 5
+  - UnitId: light_tank_leopard
+    DisplayName: Light tank
+    Icon: {fileID: 21300000, guid: e96a17066fd35014daa31cd5514d1c1e, type: 3}
+    UnitPrefab: {fileID: 6336712478654482595, guid: 08f136bf7077dcc49a24cc3ccded778b, type: 3}
+    MineralCost: 50
+    PowerCost: 10
+    PowerUpkeep: 1
+    RequiredTechTier: 1
+    BuildTime: 6
   Icon: {fileID: 21300000, guid: e86cf5b273a38c34c92757f144175a87, type: 3}
 --- !u!114 &607150952192085328
 MonoBehaviour:
@@ -639,6 +657,20 @@ CapsuleCollider:
   m_Height: 3
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &-3232938900561344165
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6009145306809327539}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5f0cf10b85a8fc4ea8d3292a1877167, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShowTopMostFoldoutHeaderGroup: 1
+  powerProduced: 50
 --- !u!4 &6354321225902392585 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: ae32fa818cb684b4d9466a03146dd03e, type: 3}
