@@ -7,6 +7,7 @@ public class HUDCommandPanel : MonoBehaviour
     [SerializeField] private GameObject workerButtons;
     [SerializeField] private GameObject buildingButtons;
     [SerializeField] private BuildingProductionCommandUI buildingProductionCommandUI;
+    [SerializeField] private WorkerBuildCommandUI workerBuildCommandUI;
 
     public static bool MoveMode;
     public static bool AttackMode;
@@ -28,6 +29,9 @@ public class HUDCommandPanel : MonoBehaviour
         unitButtons.SetActive(false);
         workerButtons.SetActive(true);
         buildingButtons.SetActive(false);
+
+        if (workerBuildCommandUI != null)
+            workerBuildCommandUI.RefreshFromSelection();
     }
 
     public void ShowBuildingCommands()
@@ -48,6 +52,9 @@ public class HUDCommandPanel : MonoBehaviour
 
         if (buildingProductionCommandUI != null)
             buildingProductionCommandUI.Clear();
+
+        if (workerBuildCommandUI != null)
+            workerBuildCommandUI.Clear();
     }
 
     public void MoveCommand()

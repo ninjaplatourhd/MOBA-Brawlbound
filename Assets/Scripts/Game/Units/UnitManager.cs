@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 public class UnitManager : MonoBehaviour
@@ -51,6 +52,9 @@ public class UnitManager : MonoBehaviour
     void Update()
     {
         if (InputBlocker.IsPointerOverUI())
+            return;
+
+        if (BuildingPlacementSystem.Instance != null && BuildingPlacementSystem.Instance.IsPlacing)
             return;
 
         // selecting units
@@ -106,6 +110,8 @@ public class UnitManager : MonoBehaviour
             if (TryHandleResourceRightClick(ray))
                 return;
 
+            if (TryHandleWorkerBuildOrRepairRightClick(ray))
+                return;
 
             if (Physics.Raycast(ray, out RaycastHit targetHit, Mathf.Infinity, _clickable))
             {
@@ -225,7 +231,9 @@ public class UnitManager : MonoBehaviour
             if (unitObj == null)
                 continue;
 
-            CancelGatheringIfWorker(unitObj);
+            Unit unit = unitObj.GetComponentInParent<Unit>();
+            if (unit != null)
+                CancelWorkerTasks(unit);
 
             if (unitObj.TryGetComponent<UnitCombat>(out UnitCombat combat))
             {
@@ -275,7 +283,9 @@ public class UnitManager : MonoBehaviour
 
             Vector3 targetPosition = targetPoint + positionDiff;
 
-            CancelGatheringIfWorker(unitObj);
+            Unit unit = unitObj.GetComponentInParent<Unit>();
+            if (unit != null)
+                CancelWorkerTasks(unit);
 
             if (unitObj.TryGetComponent<UnitMovement>(out UnitMovement movement))
             {
@@ -299,7 +309,9 @@ public class UnitManager : MonoBehaviour
 
         foreach (var unitObj in SelectedUnits)
         {
-            CancelGatheringIfWorker(unitObj);
+            Unit unit = unitObj.GetComponentInParent<Unit>();
+            if (unit != null)
+                CancelWorkerTasks(unit);
 
             if (unitObj.TryGetComponent<UnitMovement>(out UnitMovement movement))
             {
@@ -323,7 +335,9 @@ public class UnitManager : MonoBehaviour
             if (unitObj == null)
                 continue;
 
-            CancelGatheringIfWorker(unitObj);
+            Unit unit = unitObj.GetComponentInParent<Unit>();
+            if (unit != null)
+                CancelWorkerTasks(unit);
 
             if (unitObj.TryGetComponent<UnitCombat>(out UnitCombat combat))
             {
@@ -365,15 +379,111 @@ public class UnitManager : MonoBehaviour
         return commandSent;
     }
 
-    private void CancelGatheringIfWorker(GameObject unitObj)
+    private bool TryHandleWorkerBuildOrRepairRightClick(Ray ray)
     {
-        if (unitObj == null)
-            return;
+        if (!Physics.Raycast(ray, out RaycastHit hit, 1000f, _clickable))
+            return false;
 
-        if (unitObj.TryGetComponent<WorkerGathering>(out WorkerGathering gathering))
+        if (NetworkManager.Singleton == null)
+            return false;
+
+        ulong localClientId = NetworkManager.Singleton.LocalClientId;
+
+        ConstructionSite constructionSite = hit.collider.GetComponentInParent<ConstructionSite>();
+
+        if (constructionSite != null)
         {
-            gathering.RequestCancelGathering();
+            Building siteBuilding = constructionSite.GetComponent<Building>();
+
+            if (siteBuilding != null && siteBuilding.PlayerClientId.Value == localClientId)
+            {
+                bool orderedAnyWorker = false;
+
+                foreach (GameObject selectedUnit in SelectedUnits)
+                {
+                    if (selectedUnit == null)
+                        continue;
+
+                    WorkerBuilder workerBuilder = selectedUnit.GetComponent<WorkerBuilder>();
+
+                    if (workerBuilder == null)
+                        continue;
+
+                    workerBuilder.RequestBuildConstructionSite(constructionSite);
+                    orderedAnyWorker = true;
+                }
+
+                return orderedAnyWorker;
+            }
         }
+
+        Building building = hit.collider.GetComponentInParent<Building>();
+
+        if (building != null && building.GetComponent<ConstructionSite>() == null)
+        {
+            if (building.PlayerClientId.Value == localClientId &&
+                building.Health.Value < building.MaxHealth.Value - 0.5f)
+            {
+                bool orderedAnyWorker = false;
+
+                foreach (GameObject selectedUnit in SelectedUnits)
+                {
+                    if (selectedUnit == null)
+                        continue;
+
+                    WorkerBuilder workerBuilder = selectedUnit.GetComponent<WorkerBuilder>();
+
+                    if (workerBuilder == null)
+                        continue;
+
+                    workerBuilder.RequestRepairBuilding(building);
+                    orderedAnyWorker = true;
+                }
+
+                return orderedAnyWorker;
+            }
+        }
+
+        return false;
+    }
+
+    public List<WorkerBuilder> GetSelectedWorkerBuilders()
+    {
+        List<WorkerBuilder> selectedWorkerBuilders = new List<WorkerBuilder>();
+
+        foreach (GameObject selectedObject in SelectedUnits)
+        {
+            if (selectedObject == null)
+                continue;
+
+            WorkerBuilder workerBuilder = selectedObject.GetComponent<WorkerBuilder>();
+
+            if (workerBuilder == null)
+                workerBuilder = selectedObject.GetComponentInParent<WorkerBuilder>();
+
+            if (workerBuilder == null)
+                continue;
+
+            if (!workerBuilder.BelongsToLocalPlayer())
+                continue;
+
+            selectedWorkerBuilders.Add(workerBuilder);
+        }
+
+        return selectedWorkerBuilders;
+    }
+
+    private void CancelWorkerTasks(Unit unit)
+    {
+        WorkerGathering gathering = unit.GetComponent<WorkerGathering>();
+
+        if (gathering != null)
+            gathering.RequestCancelGathering();
+
+        WorkerBuilder builder = unit.GetComponent<WorkerBuilder>();
+
+        if (builder != null)
+            builder.RequestCancelWorkerWork();
     }
 
 }

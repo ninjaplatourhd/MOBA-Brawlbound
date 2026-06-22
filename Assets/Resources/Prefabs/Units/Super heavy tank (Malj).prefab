@@ -656,7 +656,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UnitId: super_heavy_tank_malj
   DisplayName: Super Heavy Tank (Malj)
-  SightRadius: 40
+  SightRadius: 35
   MovesGun: 0
   Range: 30
   DamageBonus: 0
