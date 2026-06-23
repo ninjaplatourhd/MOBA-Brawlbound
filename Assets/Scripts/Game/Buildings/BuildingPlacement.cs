@@ -151,9 +151,10 @@ public class BuildingPlacementSystem : MonoBehaviour
         currentPlacementPosition.y += placementYOffset;
 
         currentPlacementValid = IsPlacementValid(
-            currentPlacementPosition,
-            currentPlacementRotation,
-            currentBuildableBuilding
+        currentPlacementPosition,
+        currentPlacementRotation,
+        currentBuildableBuilding,
+        true
         );
 
         if (currentWorkerBuilder != null && !currentWorkerBuilder.CanBuild(currentBuildableBuilding))
@@ -234,7 +235,7 @@ public class BuildingPlacementSystem : MonoBehaviour
             return;
         }
 
-        if (!IsPlacementValid(position, rotation, buildableBuilding))
+        if (!IsPlacementValid(position, rotation, buildableBuilding, false))
         {
             Debug.LogWarning("[SERVER] Placement nije validan na serveru.");
             return;
@@ -336,14 +337,15 @@ public class BuildingPlacementSystem : MonoBehaviour
     }
 
     private bool IsPlacementValid(
-        Vector3 position,
-        Quaternion rotation,
-        BuildableBuilding buildableBuilding)
+     Vector3 position,
+     Quaternion rotation,
+     BuildableBuilding buildableBuilding,
+     bool checkFog)
     {
         if (buildableBuilding == null)
             return false;
 
-        if (buildableBuilding.RequiresVisibleArea && requireVisibleArea)
+        if (checkFog && buildableBuilding.RequiresVisibleArea && requireVisibleArea)
         {
             if (FogOfWar.Instance != null && !FogOfWar.Instance.IsVisibleNow(position))
                 return false;
