@@ -43,6 +43,12 @@ public class UnitManager : MonoBehaviour
         }
 
     }
+
+    private void LateUpdate()
+    {
+        InputBlocker.SelectionConsumed = false;
+    }
+
     void Start()
     {
         _camera = Camera.main;
@@ -54,51 +60,54 @@ public class UnitManager : MonoBehaviour
         if (InputBlocker.IsPointerOverUI())
             return;
 
+
+
         if (BuildingPlacementSystem.Instance != null && BuildingPlacementSystem.Instance.IsPlacing)
             return;
 
         // selecting units
-        if (Input.GetMouseButtonDown(0))
-        {
-            RaycastHit hit;
-            Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
-            if (Physics.Raycast(ray, out hit, Mathf.Infinity, _clickable))
-            {
+        //if (Input.GetMouseButtonDown(0))
+        //{
+        //    RaycastHit hit;
+        //    Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
+        //    if (Physics.Raycast(ray, out hit, Mathf.Infinity, _clickable))
+        //    {
 
-                if (hit.collider.gameObject.TryGetComponent<Unit>(out Unit unit))
-                {
-                    if (unit.BelongsToLocalPlayer())
-                    {
-                        SelectUnit(hit.collider.gameObject);
-                    }
-                }
-                else
-                {
-                    Building building = hit.collider.GetComponentInParent<Building>();
+        //        if (hit.collider.gameObject.TryGetComponent<Unit>(out Unit unit))
+        //        {
+        //            if (unit.BelongsToLocalPlayer())
+        //            {
+        //                SelectUnit(hit.collider.gameObject);
+        //            }
+        //        }
+        //        else
+        //        {
+        //            Building building = hit.collider.GetComponentInParent<Building>();
 
-                    if (building != null && building.BelongsToLocalPlayer())
-                    {
-                        DeSelectAll();
+        //            if (building != null && building.BelongsToLocalPlayer())
+        //            {
+        //                DeSelectAll();
 
-                        if (BuildingManager.instance != null)
-                        {
-                            BuildingManager.instance.SelectBuilding(building.gameObject);
-                        }
+        //                if (BuildingManager.instance != null)
+        //                {
+        //                    BuildingManager.instance.SelectBuilding(building.gameObject);
+        //                }
 
-                        return;
-                    }
-                }
+        //                return;
+        //            }
+        //        }
 
-            }
-            else
-            {
+        //    }
+        //    else
+        //    {
 
-                DeSelectAll();
-                BuildingManager.instance.DeSelectAll();
-                IngameConsole.print(SelectedUnits.Count);
-            }
-        }
-        else if (Input.GetMouseButtonDown(1))
+        //        DeSelectAll();
+        //        BuildingManager.instance.DeSelectAll();
+        //        IngameConsole.print(SelectedUnits.Count);
+        //    }
+        //}
+
+        if (Input.GetMouseButtonDown(1))
         {
             Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
 

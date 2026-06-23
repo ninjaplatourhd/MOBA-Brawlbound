@@ -15,8 +15,14 @@ public class UnitSelection : MonoBehaviour
 
     private bool MouseStartedOnUI;
 
+    private bool _additiveClick;
+
     private bool _isDragging;
     private float _dragThreshold = 10f;
+
+    private float lastClickTime = 0f;
+    private const float doubleClickThreshold = 0.3f;
+    private GameObject lastClickedUnit = null;
 
     private Camera _camera;
     private void Awake()
@@ -71,6 +77,9 @@ public class UnitSelection : MonoBehaviour
             _isDragging = false;
             _startingPoint = Input.mousePosition;
 
+            _additiveClick = Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+
+
             _selectionArea.SetActive(true);
             rectTransform.position = _startingPoint;
             rectTransform.sizeDelta = Vector2.zero;
@@ -121,7 +130,7 @@ public class UnitSelection : MonoBehaviour
             }
             else
             {
-                SelectSingleUnit();
+                HandleLeftClick();
             }
 
             _isDragging = false;
@@ -142,23 +151,109 @@ public class UnitSelection : MonoBehaviour
         }
     }
 
-    private void SelectSingleUnit()
+    private void HandleUnitClick(Unit unit)
     {
-        Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
+        
+            
+                if (!unit.BelongsToLocalPlayer())
+                    return;
 
-        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, LayerMask.GetMask("Clickable")))
-        {
-            if (hit.collider.TryGetComponent<Unit>(out Unit unit))
-            {
-                if (unit.BelongsToLocalPlayer())
+                GameObject clickedUnit = unit.gameObject;
+
+                // double click → select same type
+                if (Time.time - lastClickTime < doubleClickThreshold &&
+                    lastClickedUnit == clickedUnit)
                 {
-                    UnitManager.instance.SelectUnit(unit.gameObject);
+                    SelectAllSameUnits(unit);
+
+                    lastClickTime = 0f;
+                    lastClickedUnit = null;
+                    InputBlocker.SelectionConsumed = true;
                     return;
                 }
-            }
+
+                lastClickTime = Time.time;
+                lastClickedUnit = clickedUnit;
+
+                // CTRL ADDITIVE SELECTION (now reliable)
+                if (_additiveClick)
+                {
+                    ToggleUnitSelection(clickedUnit);
+                    InputBlocker.SelectionConsumed = true;
+                    return;
+                }
+
+                UnitManager.instance.SelectUnit(clickedUnit, _additiveClick);
+                InputBlocker.SelectionConsumed = true;
+                return;
+            
+        
+
+        // empty space click
+        if (!_additiveClick)
+        {
+            UnitManager.instance.DeSelectAll();
+            InputBlocker.SelectionConsumed = true;
+        }
+    }
+
+    // metoda za selekt istih jedinica duplim klikom/Savo
+    private void SelectAllSameUnits(Unit clickedUnit)
+    {
+        List<GameObject> result = new List<GameObject>();
+
+        foreach (var obj in UnitManager.instance.AllUnitsList)
+        {
+            if (obj == null)
+                continue;
+
+            if (!obj.TryGetComponent<Unit>(out Unit unit))
+                continue;
+
+            if (!unit.BelongsToLocalPlayer())
+                continue;
+
+            if (unit.Data == null || clickedUnit.Data == null)
+                continue;
+
+            if (unit.Data.UnitId != clickedUnit.Data.UnitId)
+                continue;
+
+            Vector3 screenPos = Camera.main.WorldToViewportPoint(obj.transform.position);
+
+            bool onScreen =
+                screenPos.z > 0 &&
+                screenPos.x >= 0 && screenPos.x <= 1 &&
+                screenPos.y >= 0 && screenPos.y <= 1;
+
+            if (!onScreen)
+                continue;
+
+            result.Add(obj);
         }
 
-        UnitManager.instance.DeSelectAll();
+        UnitManager.instance.SelectUnits(result);
+    }
+
+    // metoda za dodavanje ili uklanjanje jedinice iz selekcije
+    private void ToggleUnitSelection(GameObject unitObj)
+    {
+        if (UnitManager.instance.SelectedUnits.Contains(unitObj))
+        {
+            // remove from selection
+            UnitManager.instance.SelectedUnits.Remove(unitObj);
+
+            if (unitObj.TryGetComponent<ISelectableObject>(out ISelectableObject selectable))
+                selectable.DeSelect();
+
+            return;
+        }
+
+        // add to selection
+        UnitManager.instance.SelectedUnits.Add(unitObj);
+
+        if (unitObj.TryGetComponent<ISelectableObject>(out ISelectableObject selectableAdd))
+            selectableAdd.Select();
     }
 
     private void SelectUnitsInRectangle()
@@ -199,5 +294,44 @@ public class UnitSelection : MonoBehaviour
 
         UnitManager.instance.SelectUnits(selectedUnits);
     }
+
+    private void HandleLeftClick()
+    {
+        Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
+
+        if (Physics.Raycast(ray, out RaycastHit hit, Mathf.Infinity, LayerMask.GetMask("Clickable")))
+        {
+            if (hit.collider.TryGetComponent<Unit>(out Unit unit))
+            {
+                HandleUnitClick(unit);
+                return;
+            }
+
+            Building building = hit.collider.GetComponentInParent<Building>();
+
+            if (building != null)
+            {
+                if (building.BelongsToLocalPlayer())
+                {
+                    UnitManager.instance.DeSelectAll();
+
+                    if (BuildingManager.instance != null)
+                        BuildingManager.instance.SelectBuilding(building.gameObject);
+                }
+
+                return;
+            }
+        }
+
+        if (!_additiveClick)
+        {
+            UnitManager.instance.DeSelectAll();
+
+            if (BuildingManager.instance != null)
+                BuildingManager.instance.DeSelectAll();
+        }
+    }
+
+
 }
 
