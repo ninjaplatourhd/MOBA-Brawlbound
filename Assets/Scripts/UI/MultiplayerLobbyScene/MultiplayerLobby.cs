@@ -758,6 +758,26 @@ public class MultiplayerLobby : MonoBehaviour
 
             bool started = NetworkManager.Singleton.StartHost();
 
+            // registrovanje imena igraca
+            foreach (var player in currentLobby.Players)
+            {
+                string name = GetPlayerData(player, PlayerNameKey, player.Id);
+
+                ulong clientId;
+
+                // host je ClientId = 0 
+                if (player.Id == currentLobby.HostId)
+                    clientId = NetworkManager.Singleton.LocalClientId;
+                else
+                    continue; // ostali idu preko RPC
+                PlayerRegistry.RegisterPlayer(clientId, new PlayerData
+                {
+                    LobbyPlayerId = player.Id,
+                    Name = name,
+                    Team = GetPlayerData(player, PlayerTeamKey, "Team 1")
+                });
+            }
+
             if (!started)
             {
                 Debug.LogError("StartHost failed.");

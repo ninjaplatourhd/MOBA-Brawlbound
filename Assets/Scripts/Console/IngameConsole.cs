@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using TMPro;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class IngameConsole : MonoBehaviour
+public class IngameConsole : NetworkBehaviour
 {
 
     public string LocalClientName { get => client; set { client = value; } }
@@ -27,6 +28,7 @@ public class IngameConsole : MonoBehaviour
     {
         AppendSystemMessage("Started Game...");
     }
+
     private void OnEnable()
     {
         // Register to listen to log messages
@@ -48,11 +50,31 @@ public class IngameConsole : MonoBehaviour
 
     public void Update()
     {
+        //samo input od igraca
+        if (!IsClient)
+            return;
+
         if (inputField.text != "" && Input.GetKeyUp(KeyCode.Return))
         {
-            AppendMessage(client, inputField.text);
+            SendMessageToServerRpc(inputField.text);
             inputField.text = "";
         }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SendMessageToServerRpc(string message, ServerRpcParams rpcParams = default)
+    {
+        ulong senderId = rpcParams.Receive.SenderClientId;
+
+        string senderName = GetPlayerName(senderId);
+
+        ReceiveMessageClientRpc(senderName, message);
+    }
+
+    [ClientRpc]
+    private void ReceiveMessageClientRpc(string sender, string message)
+    {
+        AppendMessage(sender, message);
     }
 
     public void AppendMessage(string sender, string msg)
@@ -65,6 +87,27 @@ public class IngameConsole : MonoBehaviour
     {
         messages.Add("[System]: " + msg + "\n");
         RefreshChat();
+    }
+
+    //private string GetPlayerName(ulong clientId)
+    //{
+    //    if (PlayerRegistry.Players.TryGetValue(clientId, out var data))
+    //    {
+    //        return data.Name;
+    //    }
+
+    //    return "Unknown";
+    //}
+
+    private string GetPlayerName(ulong clientId)
+    {
+        if (PlayerRegistry.Players != null &&
+            PlayerRegistry.Players.TryGetValue(clientId, out var data))
+        {
+            return data.Name;
+        }
+
+        return $"Player {clientId}";
     }
 
     public void ClearChat()
