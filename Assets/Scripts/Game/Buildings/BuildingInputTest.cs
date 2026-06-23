@@ -4,6 +4,9 @@ public class BuildingInputTest : MonoBehaviour
 {
     private void Update()
     {
+        if (IngameConsole.IsTypingInConsole)
+            return;
+
         if (!Input.GetKeyDown(KeyCode.B))
             return;
 

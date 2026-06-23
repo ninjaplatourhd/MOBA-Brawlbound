@@ -100,6 +100,9 @@ public class RTSCameraController : MonoBehaviour
     {
         Vector3 input = Vector3.zero;
 
+        if (IngameConsole.IsTypingInConsole)
+            return;
+
         if (Input.GetKey(KeyCode.W) || Input.GetKey(KeyCode.UpArrow))
             input.z += 1f;
 

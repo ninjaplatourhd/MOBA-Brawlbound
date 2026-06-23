@@ -62,6 +62,9 @@ public class BuildingPlacementSystem : MonoBehaviour
         if (mainCamera == null)
             mainCamera = Camera.main;
 
+        if (IngameConsole.IsTypingInConsole)
+            return;
+
         if (Input.GetKeyDown(KeyCode.Escape) || Input.GetMouseButtonDown(1))
         {
             CancelPlacement();

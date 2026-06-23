@@ -8,6 +8,9 @@ public class EconomyDebugInput : NetworkBehaviour
         if (!IsClient)
             return;
 
+        if (IngameConsole.IsTypingInConsole)
+            return;
+
         if (Input.GetKeyDown(KeyCode.F8))
         {
             AddMineralsServerRpc(100);

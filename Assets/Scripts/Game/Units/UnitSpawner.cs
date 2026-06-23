@@ -22,6 +22,9 @@ public class UnitSpawner : NetworkBehaviour
         //  IngameConsole.print("KAAAAA");
         if (!IsOwner) return;
 
+        if (IngameConsole.IsTypingInConsole)
+            return;
+
         if (Input.GetKeyDown(KeyCode.P))
         {
             IngameConsole.print("Klikno sam p");
