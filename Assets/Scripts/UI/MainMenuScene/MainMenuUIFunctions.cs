@@ -16,6 +16,7 @@ public class MainMenuUIFunctions : MonoBehaviour
     {
         playBtn.onClick.AddListener(() => SceneManager.LoadScene(sceneName: "MultiplayerMenu"));
         quitBtn.onClick.AddListener(() => QuitGame());
+        
     }
 
     // Update is called once per frame

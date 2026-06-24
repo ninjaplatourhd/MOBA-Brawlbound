@@ -1,3 +1,4 @@
+using System.Resources;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -5,18 +6,16 @@ using UnityEngine;
 public class TopBarUIController : MonoBehaviour
 {
     [Header("References")]
-    [SerializeField] private TMP_Text resourceText;
+    [SerializeField] private TMP_Text mineraliText;
+    [SerializeField] private TMP_Text techText;
+    [SerializeField] private TMP_Text strujaText;
 
     [Header("Update")]
     [SerializeField] private float refreshInterval = 0.1f;
 
     private float refreshTimer;
 
-    private void Awake()
-    {
-        if (resourceText == null)
-            resourceText = GetComponent<TMP_Text>();
-    }
+  
 
     private void Update()
     {
@@ -31,26 +30,25 @@ public class TopBarUIController : MonoBehaviour
 
     private void Refresh()
     {
-        if (resourceText == null)
+      /*  if (mineraliText == null)
             return;
 
         if (NetworkManager.Singleton == null || PlayerEconomyManager.Instance == null)
         {
-            resourceText.text = "Minerali: -\nStruja: - / -\nTech: -";
+            mineraliText.text = "Minerali: -\nStruja: - / -\nTech: -";
             return;
         }
-
+      */
         ulong localClientId = NetworkManager.Singleton.LocalClientId;
 
         if (!PlayerEconomyManager.Instance.TryGetPlayerState(localClientId, out PlayerGameData data))
         {
-            resourceText.text = "Ekonomija nije spremna...";
+         
             return;
         }
+        mineraliText.text = data.Minerals.ToString();
+        strujaText.text = data.PowerUsed.ToString() + "/" + data.PowerProduced.ToString();
+        techText.text = data.TechTier.ToString();
 
-        resourceText.text =
-            $"Minerali: {data.Minerals}\n" +
-            $"Struja: {data.PowerUsed} / {data.PowerProduced}  ({data.PowerAvailable} slobodno)\n" +
-            $"Tech: {data.TechTier}";
     }
 }
