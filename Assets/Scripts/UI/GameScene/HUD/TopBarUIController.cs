@@ -1,4 +1,3 @@
-using System.Resources;
 using TMPro;
 using Unity.Netcode;
 using UnityEngine;
@@ -15,7 +14,7 @@ public class TopBarUIController : MonoBehaviour
 
     private float refreshTimer;
 
-  
+
 
     private void Update()
     {
@@ -30,20 +29,18 @@ public class TopBarUIController : MonoBehaviour
 
     private void Refresh()
     {
-      /*  if (mineraliText == null)
+        if (mineraliText == null || techText == null || strujaText == null)
             return;
 
         if (NetworkManager.Singleton == null || PlayerEconomyManager.Instance == null)
         {
-            mineraliText.text = "Minerali: -\nStruja: - / -\nTech: -";
             return;
         }
-      */
+
         ulong localClientId = NetworkManager.Singleton.LocalClientId;
 
         if (!PlayerEconomyManager.Instance.TryGetPlayerState(localClientId, out PlayerGameData data))
         {
-         
             return;
         }
         mineraliText.text = data.Minerals.ToString();
