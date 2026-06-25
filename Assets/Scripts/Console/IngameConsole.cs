@@ -41,7 +41,7 @@ public class IngameConsole : NetworkBehaviour
 
     private void OnEnable()
     {
-        Application.logMessageReceived += HandleLog;
+        //Application.logMessageReceived += HandleLog;
 
         if (inputField != null)
             SetupInputField();
@@ -49,7 +49,7 @@ public class IngameConsole : NetworkBehaviour
 
     private void OnDisable()
     {
-        Application.logMessageReceived -= HandleLog;
+        //Application.logMessageReceived -= HandleLog;
 
         if (inputField != null)
         {
@@ -142,11 +142,11 @@ public class IngameConsole : NetworkBehaviour
         IsTypingInConsole = true;
     }
 
-    private void HandleLog(string logString, string stackTrace, LogType type)
-    {
-        string formattedMessage = $"[{type}] {logString}";
-        AppendSystemMessage(formattedMessage);
-    }
+    //private void HandleLog(string logString, string stackTrace, LogType type)
+    //{
+    //    string formattedMessage = $"[{type}] {logString}";
+    //    AppendSystemMessage(formattedMessage);
+    //}
 
     [ServerRpc(RequireOwnership = false)]
     private void SendMessageToServerRpc(string message, ServerRpcParams rpcParams = default)
