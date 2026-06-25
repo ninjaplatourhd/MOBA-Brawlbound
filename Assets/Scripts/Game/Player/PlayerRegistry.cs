@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Unity.Netcode;
+using UnityEngine;
 
 public static class PlayerRegistry
 {
@@ -8,8 +8,8 @@ public static class PlayerRegistry
 
     public static void RegisterPlayer(ulong clientId, PlayerData data)
     {
-        if (!NetworkManager.Singleton.IsServer)
-            return;
+        //  if (!NetworkManager.Singleton.IsServer)
+        //    return;
 
         Players[clientId] = data;
     }
@@ -29,6 +29,14 @@ public static class PlayerRegistry
         }
 
         return "Unknown";
+    }
+
+    public static Color GetPlayerColor(ulong clientId)
+    {
+        if (Players.TryGetValue(clientId, out var data))
+            return PlayerData.PlayerColorFromName(data.Color);
+
+        return Color.black;
     }
 
     public static PlayerData? GetPlayer(ulong clientId)

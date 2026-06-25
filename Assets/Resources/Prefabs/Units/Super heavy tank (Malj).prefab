@@ -445,6 +445,62 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2577548232221058511, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.08
+      objectReference: {fileID: 0}
+    - target: {fileID: -2577548232221058511, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.07852296
+      objectReference: {fileID: 0}
+    - target: {fileID: -2577548232221058511, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.9567315
+      objectReference: {fileID: 0}
+    - target: {fileID: -2577548232221058511, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.84962845
+      objectReference: {fileID: 0}
+    - target: {fileID: -2577548232221058511, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 4.6100006
+      objectReference: {fileID: 0}
+    - target: {fileID: -2577548232221058511, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.061798096
+      objectReference: {fileID: 0}
+    - target: {fileID: -2577548232221058511, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.00073649007
+      objectReference: {fileID: 0}
+    - target: {fileID: -2577548232221058511, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.9986517
+      objectReference: {fileID: 0}
+    - target: {fileID: -2577548232221058511, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0.014778582
+      objectReference: {fileID: 0}
+    - target: {fileID: -2577548232221058511, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.04975865
+      objectReference: {fileID: 0}
+    - target: {fileID: -2577548232221058511, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: -185.705
+      objectReference: {fileID: 0}
+    - target: {fileID: -2577548232221058511, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: -181.696
+      objectReference: {fileID: 0}
+    - target: {fileID: -2577548232221058511, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
       propertyPath: m_Name
       value: Super heavy tank (Malj)
@@ -453,6 +509,18 @@ PrefabInstance:
       propertyPath: m_Layer
       value: 7
       objectReference: {fileID: 0}
+    - target: {fileID: 3902297587364882546, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 62148d62685f946488c3b536a03edca3, type: 2}
+    - target: {fileID: 5318946436961122177, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 62148d62685f946488c3b536a03edca3, type: 2}
+    - target: {fileID: 7202271454713460447, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 0b2bc0bccf925a249b82df7b39bd3dc8, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -494,6 +562,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 4505572660694283038}
   m_SourcePrefab: {fileID: 100100000, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+--- !u!1 &3349397652102903451 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5146725597640393743, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+  m_PrefabInstance: {fileID: 7572702454443864724}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &7338278125657640901 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
@@ -534,7 +607,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1885601786
+  GlobalObjectIdHash: 3134993084
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -564,6 +637,10 @@ MonoBehaviour:
   _barrels:
   - {fileID: 1021614474475707008}
   _gunPivot: {fileID: 0}
+  playerColorObjects:
+  - {fileID: 3349397652102903451}
+  - {fileID: 8911601638206266421}
+  colorPropertyName: _BaseColor
   PlayerClientId:
     m_InternalValue: 0
   Health:
@@ -727,5 +804,10 @@ Transform:
 --- !u!4 &8764811521211182153 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1204001934383636189, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
+  m_PrefabInstance: {fileID: 7572702454443864724}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &8911601638206266421 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1349948197678100129, guid: 4f6929ecc2786ed4e8172892e5a8b3a9, type: 3}
   m_PrefabInstance: {fileID: 7572702454443864724}
   m_PrefabAsset: {fileID: 0}

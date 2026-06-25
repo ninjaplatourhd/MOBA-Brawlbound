@@ -1,5 +1,4 @@
 using Unity.Netcode;
-using UnityEngine;
 
 public class PlayerSync : NetworkBehaviour
 {
@@ -7,35 +6,80 @@ public class PlayerSync : NetworkBehaviour
     {
         if (IsServer)
         {
-            // server registers host
-            PlayerRegistry.RegisterPlayer(
+            RegisterPlayerOnServer(
                 NetworkManager.Singleton.LocalClientId,
-                new PlayerData
-                {
-                    LobbyPlayerId = "Host",
-                    Name = LobbyManager.Instance.PlayerName,
-                    Team = LobbyManager.Instance.Team
-                });
+                "Host",
+                LobbyManager.Instance.PlayerName,
+                LobbyManager.Instance.Team,
+                LobbyManager.Instance.Color
+            );
         }
 
         if (IsClient && IsOwner)
         {
             RegisterMeServerRpc(
                 LobbyManager.Instance.PlayerName,
-                LobbyManager.Instance.Team);
+                LobbyManager.Instance.Team,
+                LobbyManager.Instance.Color
+            );
         }
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void RegisterMeServerRpc(string name, string team, ServerRpcParams rpcParams = default)
+    private void RegisterMeServerRpc(
+        string name,
+        string team,
+        string color,
+        ServerRpcParams rpcParams = default)
     {
         ulong clientId = rpcParams.Receive.SenderClientId;
 
+        RegisterPlayerOnServer(
+            clientId,
+            clientId.ToString(),
+            name,
+            team,
+            color
+        );
+    }
+
+    private void RegisterPlayerOnServer(
+        ulong clientId,
+        string lobbyPlayerId,
+        string name,
+        string team,
+        string color)
+    {
+        if (!IsServer)
+            return;
+
+        PlayerData data = new PlayerData
+        {
+            LobbyPlayerId = lobbyPlayerId,
+            Name = name,
+            Team = team,
+            Color = color
+        };
+
+        PlayerRegistry.RegisterPlayer(clientId, data);
+
+        RegisterPlayerClientRpc(clientId, lobbyPlayerId, name, team, color);
+    }
+
+    [ClientRpc]
+    private void RegisterPlayerClientRpc(
+        ulong clientId,
+        string lobbyPlayerId,
+        string name,
+        string team,
+        string color)
+    {
         PlayerRegistry.RegisterPlayer(clientId, new PlayerData
         {
-            LobbyPlayerId = clientId.ToString(),
+            LobbyPlayerId = lobbyPlayerId,
             Name = name,
-            Team = team
+            Team = team,
+            Color = color
         });
     }
 
@@ -43,7 +87,15 @@ public class PlayerSync : NetworkBehaviour
     {
         if (IsServer)
         {
-            PlayerRegistry.UnregisterPlayer(NetworkManager.Singleton.LocalClientId);
+            ulong clientId = OwnerClientId;
+            PlayerRegistry.UnregisterPlayer(clientId);
+            UnregisterPlayerClientRpc(clientId);
         }
+    }
+
+    [ClientRpc]
+    private void UnregisterPlayerClientRpc(ulong clientId)
+    {
+        PlayerRegistry.UnregisterPlayer(clientId);
     }
 }

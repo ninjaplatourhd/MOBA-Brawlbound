@@ -564,6 +564,16 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 9184462864771279808}
   m_SourcePrefab: {fileID: 100100000, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
+--- !u!1 &2043851470657647101 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5146725597640393743, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
+  m_PrefabInstance: {fileID: 6571296925968070130}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &5299071032072166227 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1349948197678100129, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
+  m_PrefabInstance: {fileID: 6571296925968070130}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &5441640128892152623 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1204001934383636189, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}
@@ -609,7 +619,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 2973486758
+  GlobalObjectIdHash: 3301774500
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -639,6 +649,10 @@ MonoBehaviour:
   _barrels:
   - {fileID: 4189573925981050543}
   _gunPivot: {fileID: 5441640128892152623}
+  playerColorObjects:
+  - {fileID: 2043851470657647101}
+  - {fileID: 5299071032072166227}
+  colorPropertyName: _BaseColor
   PlayerClientId:
     m_InternalValue: 0
   Health:
