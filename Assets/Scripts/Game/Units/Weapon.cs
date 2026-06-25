@@ -9,6 +9,7 @@ public class Weapon
     public float Range = 50f;
     public float RotationSpeed = 90f;
     public float FiringArc = 25f;
+    public float WeaponYawOffset = 0f;
 
     public DamageType DamageType = DamageType.Kinetic;
     public ProjectileType ProjectileType = ProjectileType.Projectile;

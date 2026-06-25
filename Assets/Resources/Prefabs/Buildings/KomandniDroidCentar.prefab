@@ -540,6 +540,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   _markerObject: {fileID: 134392622269041477}
+  playerColorObjects: []
+  colorPropertyName: _BaseColor
   PlayerClientId:
     m_InternalValue: 0
   Health:
@@ -583,6 +585,16 @@ MonoBehaviour:
     PowerUpkeep: 1
     RequiredTechTier: 1
     BuildTime: 6
+  - UnitId: all_rounder_tank_milos
+    DisplayName: All Rounder Tank (Milos)
+    Icon: {fileID: 21300000, guid: 052201285e04fd74fbe99905936e0a61, type: 3}
+    UnitPrefab: {fileID: 4281696345470870209, guid: 0b071ff49093a0546a8eab69419d0c5b, type: 3}
+    MineralCost: 100
+    PowerCost: 15
+    PowerUpkeep: 5
+    RequiredTechTier: 1
+    BuildTime: 10
+  BuildableUpgrades: []
   Icon: {fileID: 21300000, guid: e86cf5b273a38c34c92757f144175a87, type: 3}
 --- !u!114 &607150952192085328
 MonoBehaviour:

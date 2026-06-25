@@ -566,10 +566,11 @@ public class UnitCombat : NetworkBehaviour
     private void RotateTowardsTarget(Transform aimTransform, Vector3 normalizedDirection, Vector3 targetPosition)
     {
         float rotationSpeed = GetRotationSpeedForAiming();
+        float yawOffset = GetPrimaryWeaponYawOffset();
 
         if (data.MovesGun)
         {
-            RotateGunYawOnly(aimTransform, normalizedDirection, rotationSpeed);
+            RotateGunYawOnly(aimTransform, normalizedDirection, rotationSpeed, yawOffset);
         }
         else
         {
@@ -578,12 +579,12 @@ public class UnitCombat : NetworkBehaviour
         }
     }
 
-    private void RotateGunYawOnly(Transform gunPivot, Vector3 worldDirection, float rotationSpeed)
+    private void RotateGunYawOnly(Transform gunPivot, Vector3 worldDirection, float rotationSpeed, float weaponYawOffset)
     {
         if (gunPivot == null)
             return;
 
-        float targetYaw = GetTargetLocalYaw(gunPivot, worldDirection);
+        float targetYaw = GetTargetLocalYaw(gunPivot, worldDirection, weaponYawOffset);
         float currentYaw = gunPivot.localEulerAngles.y;
 
         float newYaw = Mathf.MoveTowardsAngle(
@@ -600,7 +601,7 @@ public class UnitCombat : NetworkBehaviour
         }
     }
 
-    private float GetTargetLocalYaw(Transform gunPivot, Vector3 worldDirection)
+    private float GetTargetLocalYaw(Transform gunPivot, Vector3 worldDirection, float weaponYawOffset)
     {
         Transform parent = gunPivot.parent;
 
@@ -615,6 +616,7 @@ public class UnitCombat : NetworkBehaviour
 
         float targetYaw = Mathf.Atan2(localDirection.x, localDirection.z) * Mathf.Rad2Deg;
         targetYaw += turretYawOffset;
+        targetYaw += weaponYawOffset;
 
         return targetYaw;
     }
@@ -659,7 +661,7 @@ public class UnitCombat : NetworkBehaviour
             if (distance > weapon.Range)
                 continue;
 
-            float angle = GetAimAngleToTarget(aimTransform, normalizedDirection);
+            float angle = GetAimAngleToTarget(aimTransform, normalizedDirection, weapon);
 
             if (angle > weapon.FiringArc)
                 continue;
@@ -674,11 +676,13 @@ public class UnitCombat : NetworkBehaviour
         }
     }
 
-    private float GetAimAngleToTarget(Transform aimTransform, Vector3 normalizedDirection)
+    private float GetAimAngleToTarget(Transform aimTransform, Vector3 normalizedDirection, Weapon weapon)
     {
+        float weaponYawOffset = weapon != null ? weapon.WeaponYawOffset : 0f;
+
         if (data != null && data.MovesGun && unit != null && unit.GunPivot != null)
         {
-            float targetYaw = GetTargetLocalYaw(unit.GunPivot, normalizedDirection);
+            float targetYaw = GetTargetLocalYaw(unit.GunPivot, normalizedDirection, weaponYawOffset);
             float currentYaw = unit.GunPivot.localEulerAngles.y;
 
             return Mathf.Abs(Mathf.DeltaAngle(currentYaw, targetYaw));
@@ -690,7 +694,9 @@ public class UnitCombat : NetworkBehaviour
         if (forward.sqrMagnitude < 0.01f)
             return 999f;
 
-        return Vector3.Angle(forward.normalized, normalizedDirection);
+        Vector3 effectiveForward = Quaternion.Euler(0f, weaponYawOffset, 0f) * forward.normalized;
+
+        return Vector3.Angle(effectiveForward, normalizedDirection);
     }
 
     private void EnsureWeaponCooldownList()
@@ -782,5 +788,18 @@ public class UnitCombat : NetworkBehaviour
             return;
 
         Debug.Log($"[{gameObject.name}] {message}");
+    }
+
+    private float GetPrimaryWeaponYawOffset()
+    {
+        if (data == null || data.Weapons == null || data.Weapons.Count == 0)
+            return 0f;
+
+        Weapon weapon = data.Weapons[0];
+
+        if (weapon == null)
+            return 0f;
+
+        return weapon.WeaponYawOffset;
     }
 }
