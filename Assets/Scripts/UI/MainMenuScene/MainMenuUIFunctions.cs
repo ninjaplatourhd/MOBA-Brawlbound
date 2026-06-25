@@ -9,6 +9,8 @@ public class MainMenuUIFunctions : MonoBehaviour
     private Button playBtn;
     [SerializeField]
     private Button quitBtn;
+    [SerializeField]
+    private Button codexBtn;
 
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -16,7 +18,8 @@ public class MainMenuUIFunctions : MonoBehaviour
     {
         playBtn.onClick.AddListener(() => SceneManager.LoadScene(sceneName: "MultiplayerMenu"));
         quitBtn.onClick.AddListener(() => QuitGame());
-        
+        codexBtn.onClick.AddListener(() => SceneManager.LoadScene(sceneName: "Codex"));
+
     }
 
     // Update is called once per frame
