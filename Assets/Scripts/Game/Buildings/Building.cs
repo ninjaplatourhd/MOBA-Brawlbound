@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class Building : NetworkBehaviour, ISelectableObject, IDamageable, IOwnedObject
 {
@@ -7,6 +9,10 @@ public class Building : NetworkBehaviour, ISelectableObject, IDamageable, IOwned
                             BuildingManager.instance.SelectedBuildings.Contains(gameObject);
 
     [SerializeField] private GameObject _markerObject;
+
+    [Header("Player Color")]
+    [SerializeField] private List<GameObject> playerColorObjects = new List<GameObject>();
+    [SerializeField] private string colorPropertyName = "_BaseColor";
 
     public ulong OwnerClientId => PlayerClientId.Value;
     public BuildingData Data { get; private set; }
@@ -55,10 +61,19 @@ public class Building : NetworkBehaviour, ISelectableObject, IDamageable, IOwned
         {
             BuildingManager.instance.AllBuildingsList.Add(gameObject);
         }
+
+        PlayerClientId.OnValueChanged += HandleOwnerChanged;
+
+        RefreshPlayerColor();
+        Invoke(nameof(RefreshPlayerColor), 0.25f);
+        Invoke(nameof(RefreshPlayerColor), 1f);
     }
 
     public override void OnNetworkDespawn()
     {
+        CancelInvoke(nameof(RefreshPlayerColor));
+        PlayerClientId.OnValueChanged -= HandleOwnerChanged;
+
         if (BuildingManager.instance != null)
         {
             BuildingManager.instance.AllBuildingsList.Remove(gameObject);
@@ -102,11 +117,68 @@ public class Building : NetworkBehaviour, ISelectableObject, IDamageable, IOwned
     {
         if (_markerObject != null)
             _markerObject.SetActive(true);
+
+        RefreshPlayerColor();
     }
 
     public void DeSelect()
     {
         if (_markerObject != null)
             _markerObject.SetActive(false);
+    }
+
+    private void HandleOwnerChanged(ulong oldValue, ulong newValue)
+    {
+        RefreshPlayerColor();
+    }
+
+    public void RefreshPlayerColor()
+    {
+        Color color = PlayerRegistry.GetPlayerColor(PlayerClientId.Value);
+
+        ApplyColorToGameObjects(playerColorObjects, color);
+
+        if (_markerObject != null)
+            ApplyColorToGameObject(_markerObject, color);
+    }
+
+    private void ApplyColorToGameObjects(List<GameObject> objects, Color color)
+    {
+        foreach (GameObject obj in objects)
+        {
+            if (obj == null)
+                continue;
+
+            ApplyColorToGameObject(obj, color);
+        }
+    }
+
+    private void ApplyColorToGameObject(GameObject obj, Color color)
+    {
+        Renderer[] renderers = obj.GetComponentsInChildren<Renderer>(true);
+
+        foreach (Renderer renderer in renderers)
+        {
+            Material[] materials = renderer.materials;
+
+            for (int i = 0; i < materials.Length; i++)
+            {
+                if (materials[i] == null)
+                    continue;
+
+                if (materials[i].HasProperty(colorPropertyName))
+                    materials[i].SetColor(colorPropertyName, color);
+                else if (materials[i].HasProperty("_Color"))
+                    materials[i].SetColor("_Color", color);
+            }
+        }
+
+        Image[] images = obj.GetComponentsInChildren<Image>(true);
+
+        foreach (Image image in images)
+        {
+            if (image != null)
+                image.color = color;
+        }
     }
 }

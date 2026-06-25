@@ -65,10 +65,13 @@ public class Unit : NetworkBehaviour, ISelectableObject, IDamageable, IOwnedObje
         PlayerClientId.OnValueChanged += HandleOwnerChanged;
 
         RefreshPlayerColor();
+        Invoke(nameof(RefreshPlayerColor), 0.25f);
+        Invoke(nameof(RefreshPlayerColor), 1f);
     }
 
     public override void OnNetworkDespawn()
     {
+        CancelInvoke(nameof(RefreshPlayerColor));
         PlayerClientId.OnValueChanged -= HandleOwnerChanged;
 
         if (UnitManager.instance != null)

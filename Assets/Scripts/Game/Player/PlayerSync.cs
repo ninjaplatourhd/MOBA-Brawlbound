@@ -1,4 +1,5 @@
 using Unity.Netcode;
+using UnityEngine;
 
 public class PlayerSync : NetworkBehaviour
 {
@@ -53,17 +54,17 @@ public class PlayerSync : NetworkBehaviour
         if (!IsServer)
             return;
 
-        PlayerData data = new PlayerData
+        PlayerRegistry.RegisterPlayer(clientId, new PlayerData
         {
             LobbyPlayerId = lobbyPlayerId,
             Name = name,
             Team = team,
             Color = color
-        };
-
-        PlayerRegistry.RegisterPlayer(clientId, data);
+        });
 
         RegisterPlayerClientRpc(clientId, lobbyPlayerId, name, team, color);
+
+        RefreshExistingColors();
     }
 
     [ClientRpc]
@@ -81,21 +82,26 @@ public class PlayerSync : NetworkBehaviour
             Team = team,
             Color = color
         });
+
+        RefreshExistingColors();
     }
 
-    public override void OnNetworkDespawn()
+    private void RefreshExistingColors()
     {
-        if (IsServer)
+        Unit[] units = FindObjectsByType<Unit>(FindObjectsSortMode.None);
+
+        foreach (Unit unit in units)
         {
-            ulong clientId = OwnerClientId;
-            PlayerRegistry.UnregisterPlayer(clientId);
-            UnregisterPlayerClientRpc(clientId);
+            if (unit != null)
+                unit.RefreshPlayerColor();
         }
-    }
 
-    [ClientRpc]
-    private void UnregisterPlayerClientRpc(ulong clientId)
-    {
-        PlayerRegistry.UnregisterPlayer(clientId);
+        Building[] buildings = FindObjectsByType<Building>(FindObjectsSortMode.None);
+
+        foreach (Building building in buildings)
+        {
+            if (building != null)
+                building.RefreshPlayerColor();
+        }
     }
 }

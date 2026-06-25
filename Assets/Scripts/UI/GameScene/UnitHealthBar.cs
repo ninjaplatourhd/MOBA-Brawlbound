@@ -52,6 +52,7 @@ public class UnitHealthBar : MonoBehaviour
         {
             float maxHealth = Mathf.Max(1f, unit.MaxHealth.Value);
             fillImage.fillAmount = unit.Health.Value / maxHealth;
+            fillImage.color = PlayerRegistry.GetPlayerColor(unit.PlayerClientId.Value);
             return;
         }
 
@@ -59,6 +60,7 @@ public class UnitHealthBar : MonoBehaviour
         {
             float maxHealth = Mathf.Max(1f, building.MaxHealth.Value);
             fillImage.fillAmount = building.Health.Value / maxHealth;
+            fillImage.color = PlayerRegistry.GetPlayerColor(building.PlayerClientId.Value);
             return;
         }
     }

@@ -153,41 +153,41 @@ public class UnitSelection : MonoBehaviour
 
     private void HandleUnitClick(Unit unit)
     {
-        
-            
-                if (!unit.BelongsToLocalPlayer())
-                    return;
 
-                GameObject clickedUnit = unit.gameObject;
 
-                // double click → select same type
-                if (Time.time - lastClickTime < doubleClickThreshold &&
-                    lastClickedUnit == clickedUnit)
-                {
-                    SelectAllSameUnits(unit);
+        if (!unit.BelongsToLocalPlayer())
+            return;
 
-                    lastClickTime = 0f;
-                    lastClickedUnit = null;
-                    InputBlocker.SelectionConsumed = true;
-                    return;
-                }
+        GameObject clickedUnit = unit.gameObject;
 
-                lastClickTime = Time.time;
-                lastClickedUnit = clickedUnit;
+        // double click → select same type
+        if (Time.time - lastClickTime < doubleClickThreshold &&
+            lastClickedUnit == clickedUnit)
+        {
+            SelectAllSameUnits(unit);
 
-                // CTRL ADDITIVE SELECTION (now reliable)
-                if (_additiveClick)
-                {
-                    ToggleUnitSelection(clickedUnit);
-                    InputBlocker.SelectionConsumed = true;
-                    return;
-                }
+            lastClickTime = 0f;
+            lastClickedUnit = null;
+            InputBlocker.SelectionConsumed = true;
+            return;
+        }
 
-                UnitManager.instance.SelectUnit(clickedUnit, _additiveClick);
-                InputBlocker.SelectionConsumed = true;
-                return;
-            
-        
+        lastClickTime = Time.time;
+        lastClickedUnit = clickedUnit;
+
+        // CTRL ADDITIVE SELECTION (now reliable)
+        if (_additiveClick)
+        {
+            ToggleUnitSelection(clickedUnit);
+            InputBlocker.SelectionConsumed = true;
+            return;
+        }
+
+        UnitManager.instance.SelectUnit(clickedUnit, _additiveClick);
+        InputBlocker.SelectionConsumed = true;
+        return;
+
+
 
         // empty space click
         if (!_additiveClick)
