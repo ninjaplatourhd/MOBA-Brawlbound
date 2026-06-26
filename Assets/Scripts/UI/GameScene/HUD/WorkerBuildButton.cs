@@ -1,14 +1,19 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
-public class WorkerBuildButtonUI : MonoBehaviour
+public class WorkerBuildButtonUI : MonoBehaviour,
+    IPointerEnterHandler,
+    IPointerExitHandler
 {
     [Header("References")]
     [SerializeField] private Button button;
     [SerializeField] private TMP_Text labelText;
     [SerializeField] private TMP_Text costText;
     [SerializeField] private Image iconImage;
+
+    private BuildableBuilding currentBuilding;
 
     private void Awake()
     {
@@ -18,6 +23,8 @@ public class WorkerBuildButtonUI : MonoBehaviour
 
     public void Setup(BuildableBuilding buildableBuilding, WorkerBuilder workerBuilder)
     {
+        currentBuilding = buildableBuilding;
+
         if (buildableBuilding == null)
             return;
 
@@ -69,5 +76,24 @@ public class WorkerBuildButtonUI : MonoBehaviour
 
             BuildingPlacementSystem.Instance.StartPlacement(buildableBuilding, workerBuilder);
         });
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        if (currentBuilding == null)
+            return;
+
+        TooltipUI.Instance.Show(
+            currentBuilding.DisplayName,
+            $"Cost: {currentBuilding.MineralCost} Minerals\n" +
+            $"Power: {currentBuilding.RequiredFreePower}\n" +
+            $"Build Time: {currentBuilding.BuildTime:F1}s\n" +
+            $"Tech Tier: {currentBuilding.RequiredTechTier}"
+        );
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        TooltipUI.Instance.Hide();
     }
 }

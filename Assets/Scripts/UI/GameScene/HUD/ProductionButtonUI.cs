@@ -1,13 +1,20 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
-public class ProductionButtonUI : MonoBehaviour
+public class ProductionButtonUI : MonoBehaviour,
+    IPointerEnterHandler,
+    IPointerExitHandler
 {
     [SerializeField] private Button button;
     [SerializeField] private TMP_Text labelText;
     [SerializeField] private TMP_Text costText;
     [SerializeField] private Image iconImage;
+
+    private BuildableUnit currentUnit;
+    private BuildableUpgrade currentUpgrade;
 
     private void Awake()
     {
@@ -17,6 +24,9 @@ public class ProductionButtonUI : MonoBehaviour
 
     public void SetupUnit(BuildableUnit unit, ProductionBuilding productionBuilding)
     {
+        currentUnit = unit;
+        currentUpgrade = null;
+
         if (unit == null)
             return;
 
@@ -53,6 +63,9 @@ public class ProductionButtonUI : MonoBehaviour
 
     public void SetupUpgrade(BuildableUpgrade upgrade, ProductionBuilding productionBuilding)
     {
+        currentUpgrade = upgrade;
+        currentUnit = null;
+
         if (upgrade == null)
             return;
 
@@ -85,5 +98,37 @@ public class ProductionButtonUI : MonoBehaviour
         });
 
         button.interactable = true;
+    }
+
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        Debug.Log("ENTER " + name);
+
+        if (currentUnit != null)
+        {
+            TooltipUI.Instance.Show(
+                currentUnit.DisplayName,
+                $"Cost: {currentUnit.MineralCost} Minerals\n" +
+                $"Power: {currentUnit.PowerUpkeep}\n" +
+                $"Build Time: {currentUnit.BuildTime:F1}s"
+            );
+
+            return;
+        }
+
+        if (currentUpgrade != null)
+        {
+            TooltipUI.Instance.Show(
+                currentUpgrade.DisplayName,
+                $"Cost: {currentUpgrade.MineralCost} Minerals\n" +
+                $"Research: {currentUpgrade.ResearchTime:F1}s"
+            );
+        }
+    }
+
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        Debug.Log("EXIT " + name);
+        TooltipUI.Instance.Hide();
     }
 }
