@@ -51,13 +51,34 @@ public class ProductionBuilding : NetworkBehaviour
 
     public List<BuildableUpgrade> GetBuildableUpgrades()
     {
-        if (data == null)
-            data = GetComponent<BuildingData>();
+        List<BuildableUpgrade> availableUpgrades = new List<BuildableUpgrade>();
 
         if (data == null || data.BuildableUpgrades == null)
-            return new List<BuildableUpgrade>();
+            return availableUpgrades;
 
-        return data.BuildableUpgrades;
+        if (PlayerEconomyManager.Instance == null)
+            return availableUpgrades;
+
+        if (NetworkManager.Singleton == null)
+            return availableUpgrades;
+
+        ulong localClientId = NetworkManager.Singleton.LocalClientId;
+
+        foreach (BuildableUpgrade upgrade in data.BuildableUpgrades)
+        {
+            if (upgrade == null)
+                continue;
+
+            if (IsUpgradeCompleted(localClientId, upgrade))
+                continue;
+
+            if (IsUpgradeQueued(upgrade.UpgradeId))
+                continue;
+
+            availableUpgrades.Add(upgrade);
+        }
+
+        return availableUpgrades;
     }
 
     public void RequestBuildUnit(string unitId)
@@ -201,16 +222,21 @@ public class ProductionBuilding : NetworkBehaviour
             return;
         }
 
-        if (!PlayerEconomyManager.Instance.TrySpendMinerals(senderClientId, upgrade.MineralCost))
+        if (!PlayerEconomyManager.Instance.TrySpendResourcesAndReservePower(
+        senderClientId,
+        upgrade.MineralCost,
+        upgrade.RequiredFreePower))
+        {
             return;
+        }
 
         BuildQueue.Add(new BuildQueueItemNet
         {
             ItemType = BuildQueueItemNet.TypeUpgrade,
-            UnitId = new FixedString64Bytes(upgrade.UpgradeId),
-            DisplayName = new FixedString64Bytes(upgrade.DisplayName),
+            UnitId = upgrade.UpgradeId,
+            DisplayName = upgrade.DisplayName,
             MineralCost = upgrade.MineralCost,
-            PowerUpkeep = 0,
+            PowerUpkeep = upgrade.RequiredFreePower,
             BuildTime = upgrade.ResearchTime,
             RemainingTime = upgrade.ResearchTime
         });
@@ -247,6 +273,11 @@ public class ProductionBuilding : NetworkBehaviour
 
         if (PlayerEconomyManager.Instance != null && refund > 0)
             PlayerEconomyManager.Instance.AddMinerals(senderClientId, refund);
+
+        if (item.ItemType == BuildQueueItemNet.TypeUpgrade && item.PowerUpkeep > 0)
+        {
+            PlayerEconomyManager.Instance.AddPowerUsed(senderClientId, -item.PowerUpkeep);
+        }
 
         BuildQueue.RemoveAt(index);
     }
@@ -298,6 +329,9 @@ public class ProductionBuilding : NetworkBehaviour
 
         if (currentItem.ItemType == BuildQueueItemNet.TypeUpgrade)
         {
+            if (currentItem.PowerUpkeep > 0)
+                PlayerEconomyManager.Instance.AddPowerUsed(ownerClientId, -currentItem.PowerUpkeep);
+
             CompleteUpgrade(ownerClientId, currentItem.UnitId.ToString());
             return;
         }
@@ -500,5 +534,65 @@ public class ProductionBuilding : NetworkBehaviour
     private bool IsQueueFull()
     {
         return BuildQueue != null && BuildQueue.Count >= maxQueueSize;
+    }
+
+    private bool IsUpgradeQueued(string upgradeId)
+    {
+        for (int i = 0; i < BuildQueue.Count; i++)
+        {
+            BuildQueueItemNet item = BuildQueue[i];
+
+            if (item.ItemType != BuildQueueItemNet.TypeUpgrade)
+                continue;
+
+            if (string.Equals(
+                    item.UnitId.ToString(),
+                    upgradeId,
+                    System.StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool CanStartUpgradeLocally(BuildableUpgrade upgrade)
+    {
+        if (upgrade == null)
+            return false;
+
+        if (PlayerEconomyManager.Instance == null)
+            return false;
+
+        if (NetworkManager.Singleton == null)
+            return false;
+
+        ulong localClientId = NetworkManager.Singleton.LocalClientId;
+
+        if (IsUpgradeCompleted(localClientId, upgrade))
+            return false;
+
+        if (IsUpgradeQueued(upgrade.UpgradeId))
+            return false;
+
+        return PlayerEconomyManager.Instance.CanResearchUpgrade(localClientId, upgrade);
+    }
+
+    private bool IsUpgradeCompleted(ulong clientId, BuildableUpgrade upgrade)
+    {
+        if (upgrade == null)
+            return true;
+
+        if (upgrade.SetTechTierOnComplete <= 0)
+            return false;
+
+        if (PlayerEconomyManager.Instance == null)
+            return false;
+
+        if (!PlayerEconomyManager.Instance.TryGetPlayerState(clientId, out PlayerGameData data))
+            return false;
+
+        return data.TechTier >= upgrade.SetTechTierOnComplete;
     }
 }

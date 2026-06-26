@@ -1016,7 +1016,6 @@ MonoBehaviour:
     RequiredFreePower: 0
     PowerUpkeep: 0
     RequiredTechTier: 1
-    PlacementHeightOffset: 0
     BuildTime: 30
     FootprintSize: {x: 2, y: 2}
     RequiresVisibleArea: 1
@@ -1030,7 +1029,6 @@ MonoBehaviour:
     RequiredFreePower: 12
     PowerUpkeep: 12
     RequiredTechTier: 1
-    PlacementHeightOffset: 2.2
     BuildTime: 40
     FootprintSize: {x: 2, y: 2}
     RequiresVisibleArea: 1
@@ -1043,10 +1041,22 @@ MonoBehaviour:
     MineralCost: 650
     RequiredFreePower: 20
     PowerUpkeep: 20
-    RequiredTechTier: 1
-    PlacementHeightOffset: 0
+    RequiredTechTier: 2
     BuildTime: 40
     FootprintSize: {x: 2, y: 2}
+    RequiresVisibleArea: 1
+  - BuildingId: toranj
+    DisplayName: Toranj
+    Icon: {fileID: 21300000, guid: 7d2ef82cb81e5504cae3b06450226117, type: 3}
+    FinalBuildingPrefab: {fileID: 6377157559890450384, guid: d4f0fd79d1d64124086e9f258361bd2a, type: 3}
+    ConstructionSitePrefab: {fileID: 367113461472115957, guid: 82edb7fea0641374f8583fd08c2a1cf1, type: 3}
+    PreviewPrefab: {fileID: 3937155296274055240, guid: 15c3c8d44c6250547a8eb89296f5402a, type: 3}
+    MineralCost: 200
+    RequiredFreePower: 10
+    PowerUpkeep: 10
+    RequiredTechTier: 1
+    BuildTime: 20
+    FootprintSize: {x: 0.8, y: 0.8}
     RequiresVisibleArea: 1
   buildRange: 6
   buildWorkPerSecond: 1

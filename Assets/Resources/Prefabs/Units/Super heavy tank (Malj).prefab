@@ -840,6 +840,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UnitId: super_heavy_tank_malj
   DisplayName: Super Heavy Tank (Malj)
+  RequiredTechLevel: 3
   SightRadius: 35
   MovesGun: 0
   Range: 30

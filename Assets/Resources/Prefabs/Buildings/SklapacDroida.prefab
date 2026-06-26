@@ -597,7 +597,7 @@ MonoBehaviour:
     MineralCost: 100
     PowerCost: 4
     PowerUpkeep: 4
-    RequiredTechTier: 1
+    RequiredTechTier: 2
     BuildTime: 8
   - UnitId: advanced_combat_droid
     DisplayName: Advanced Combat Droid
@@ -606,7 +606,7 @@ MonoBehaviour:
     MineralCost: 145
     PowerCost: 6
     PowerUpkeep: 6
-    RequiredTechTier: 1
+    RequiredTechTier: 2
     BuildTime: 9
   BuildableUpgrades: []
   Icon: {fileID: 21300000, guid: 48cf33a88cc39a34e90727abe4ccc252, type: 3}

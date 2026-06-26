@@ -2,7 +2,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 
 public class ProductionButtonUI : MonoBehaviour,
     IPointerEnterHandler,
@@ -97,7 +96,8 @@ public class ProductionButtonUI : MonoBehaviour,
                 Debug.LogWarning("ProductionBuilding reference je null na upgrade dugmetu.");
         });
 
-        button.interactable = true;
+        button.interactable = productionBuilding != null &&
+                      productionBuilding.CanStartUpgradeLocally(upgrade);
     }
 
     public void OnPointerEnter(PointerEventData eventData)

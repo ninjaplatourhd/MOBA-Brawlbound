@@ -739,6 +739,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UnitId: light_tank_leopard
   DisplayName: Light tank (Leopard)
+  RequiredTechLevel: 2
   SightRadius: 25
   MovesGun: 1
   Range: 20

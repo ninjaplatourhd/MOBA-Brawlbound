@@ -701,6 +701,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UnitId: machine_gun_droid
   DisplayName: Machine Gun Droid
+  RequiredTechLevel: 2
   SightRadius: 30
   MovesGun: 0
   Range: 30
