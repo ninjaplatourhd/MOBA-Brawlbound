@@ -18,7 +18,8 @@ public class ServerProjectileSystem : NetworkBehaviour
         public int Id;
 
         public ulong OwnerClientId;
-        public ulong SourceUnitNetworkObjectId;
+        public ulong SourceNetworkObjectId;
+        public bool HasSourceNetworkObject;
 
         public Vector3 Position;
         public Vector3 Direction;
@@ -35,6 +36,12 @@ public class ServerProjectileSystem : NetworkBehaviour
     private void Awake()
     {
         Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
     }
 
     private void Update()
@@ -54,7 +61,70 @@ public class ServerProjectileSystem : NetworkBehaviour
         if (!IsServer)
             return;
 
-        if (sourceUnit == null || weapon == null)
+        if (sourceUnit == null)
+            return;
+
+        if (weapon == null)
+            return;
+
+        float damageBonus = 0f;
+
+        if (sourceUnit.Data != null)
+            damageBonus = sourceUnit.Data.DamageBonus;
+
+        ServerFireProjectileInternal(
+            sourceUnit.PlayerClientId.Value,
+            sourceUnit.NetworkObjectId,
+            true,
+            startPosition,
+            direction,
+            weapon,
+            damageBonus
+        );
+    }
+
+    public void ServerFireProjectileFromBuilding(
+        Building sourceBuilding,
+        Vector3 startPosition,
+        Vector3 direction,
+        Weapon weapon)
+    {
+        if (!IsServer)
+            return;
+
+        if (sourceBuilding == null)
+            return;
+
+        if (weapon == null)
+            return;
+
+        ServerFireProjectileInternal(
+            sourceBuilding.PlayerClientId.Value,
+            sourceBuilding.NetworkObjectId,
+            true,
+            startPosition,
+            direction,
+            weapon,
+            0f
+        );
+    }
+
+    private void ServerFireProjectileInternal(
+        ulong ownerClientId,
+        ulong sourceNetworkObjectId,
+        bool hasSourceNetworkObject,
+        Vector3 startPosition,
+        Vector3 direction,
+        Weapon weapon,
+        float damageBonus)
+    {
+        if (!IsServer)
+            return;
+
+        if (weapon == null)
+            return;
+
+        if (direction.sqrMagnitude < 0.01f)
             return;
 
         int projectileId = nextProjectileId++;
@@ -62,14 +132,16 @@ public class ServerProjectileSystem : NetworkBehaviour
         ServerProjectile projectile = new ServerProjectile
         {
             Id = projectileId,
-            OwnerClientId = sourceUnit.PlayerClientId.Value,
-            SourceUnitNetworkObjectId = sourceUnit.NetworkObjectId,
+
+            OwnerClientId = ownerClientId,
+            SourceNetworkObjectId = sourceNetworkObjectId,
+            HasSourceNetworkObject = hasSourceNetworkObject,
 
             Position = startPosition,
             Direction = direction.normalized,
 
             Speed = weapon.ProjectileSpeed,
-            Damage = weapon.Damage + sourceUnit.Data.DamageBonus,
+            Damage = weapon.Damage + damageBonus,
             Radius = weapon.ProjectileRadius,
             LifeTime = weapon.ProjectileLifeTime,
 
@@ -111,7 +183,6 @@ public class ServerProjectileSystem : NetworkBehaviour
             if (TryFindHit(projectile, oldPosition, travelDistance, out RaycastHit hit))
             {
                 HandleProjectileHit(projectile, hit);
-
                 activeProjectiles.RemoveAt(i);
                 continue;
             }
@@ -121,10 +192,10 @@ public class ServerProjectileSystem : NetworkBehaviour
     }
 
     private bool TryFindHit(
-    ServerProjectile projectile,
-    Vector3 oldPosition,
-    float travelDistance,
-    out RaycastHit chosenHit)
+        ServerProjectile projectile,
+        Vector3 oldPosition,
+        float travelDistance,
+        out RaycastHit chosenHit)
     {
         chosenHit = default;
 
@@ -148,8 +219,11 @@ public class ServerProjectileSystem : NetworkBehaviour
 
             if (hitUnit != null)
             {
-                if (hitUnit.NetworkObjectId == projectile.SourceUnitNetworkObjectId)
+                if (projectile.HasSourceNetworkObject &&
+                    hitUnit.NetworkObjectId == projectile.SourceNetworkObjectId)
+                {
                     continue;
+                }
 
                 if (hitUnit.PlayerClientId.Value == projectile.OwnerClientId)
                     continue;
@@ -162,8 +236,11 @@ public class ServerProjectileSystem : NetworkBehaviour
 
             if (hitBuilding != null)
             {
-                if (hitBuilding.NetworkObjectId == projectile.SourceUnitNetworkObjectId)
+                if (projectile.HasSourceNetworkObject &&
+                    hitBuilding.NetworkObjectId == projectile.SourceNetworkObjectId)
+                {
                     continue;
+                }
 
                 if (hitBuilding.PlayerClientId.Value == projectile.OwnerClientId)
                     continue;
@@ -172,7 +249,6 @@ public class ServerProjectileSystem : NetworkBehaviour
                 return true;
             }
 
-            // terrain/wall hit
             chosenHit = hit;
             return true;
         }
@@ -184,14 +260,7 @@ public class ServerProjectileSystem : NetworkBehaviour
     {
         Vector3 impactPosition = hit.point;
 
-        Unit attackerUnit = null;
-
-        if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(
-                projectile.SourceUnitNetworkObjectId,
-                out NetworkObject sourceObject))
-        {
-            attackerUnit = sourceObject.GetComponent<Unit>();
-        }
+        Unit attackerUnit = GetAttackerUnit(projectile);
 
         Unit hitUnit = hit.collider.GetComponentInParent<Unit>();
 
@@ -212,6 +281,24 @@ public class ServerProjectileSystem : NetworkBehaviour
         }
 
         ProjectileImpactClientRpc(projectile.Id, impactPosition);
+    }
+
+    private Unit GetAttackerUnit(ServerProjectile projectile)
+    {
+        if (!projectile.HasSourceNetworkObject)
+            return null;
+
+        if (NetworkManager.Singleton == null)
+            return null;
+
+        if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(
+                projectile.SourceNetworkObjectId,
+                out NetworkObject sourceObject))
+        {
+            return null;
+        }
+
+        return sourceObject.GetComponent<Unit>();
     }
 
     [ClientRpc]
@@ -256,11 +343,13 @@ public class ServerProjectileSystem : NetworkBehaviour
     {
         if (clientVisuals.TryGetValue(projectileId, out ProjectileVisual visual))
         {
-            visual.Impact(impactPosition);
+            if (visual != null)
+                visual.Impact(impactPosition);
+
             clientVisuals.Remove(projectileId);
         }
 
-        //TODO dodati particle na hit
+        // TODO dodati particle na hit
     }
 
     [ClientRpc]

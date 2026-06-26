@@ -128,6 +128,9 @@ public class UnitManager : MonoBehaviour
                 {
                     if (!ownedObject.BelongsToLocalPlayer())
                     {
+                        if (TryOrderSelectedTowersToAttack(targetObject))
+                            return;
+
                         AttackSelectedUnits(targetObject);
                         return;
                     }
@@ -495,4 +498,38 @@ public class UnitManager : MonoBehaviour
             builder.RequestCancelWorkerWork();
     }
 
+    private bool TryOrderSelectedTowersToAttack(GameObject targetObject)
+    {
+        if (targetObject == null)
+            return false;
+
+        if (BuildingManager.instance == null)
+            return false;
+
+        bool orderedAnyTower = false;
+
+        foreach (GameObject selectedBuilding in BuildingManager.instance.SelectedBuildings)
+        {
+            if (selectedBuilding == null)
+                continue;
+
+            Building building = selectedBuilding.GetComponent<Building>();
+
+            if (building == null)
+                continue;
+
+            if (!building.BelongsToLocalPlayer())
+                continue;
+
+            TowerCombat towerCombat = selectedBuilding.GetComponent<TowerCombat>();
+
+            if (towerCombat == null)
+                continue;
+
+            towerCombat.RequestAttackTarget(targetObject);
+            orderedAnyTower = true;
+        }
+
+        return orderedAnyTower;
+    }
 }

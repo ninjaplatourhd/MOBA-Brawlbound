@@ -875,14 +875,14 @@ MonoBehaviour:
   pitchPivot: {fileID: 624408166615577135}
   yawOffset: 180
   pitchRestX: 90
-  minPitchX: 30
-  maxPitchX: 150
+  minPitchX: 0
+  maxPitchX: 180
   invertPitch: 0
   scanInterval: 0.25
-  targetAimHeight: 0.8
+  targetAimHeight: 0.5
   fallbackBarrel: {fileID: 0}
   rotationSyncThreshold: 0.05
-  debugTower: 0
+  debugTower: 1
 --- !u!1 &8256892913994111683 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -6424597585239625662, guid: c1a1b39047a437e4c9866f0ac1427b13, type: 3}

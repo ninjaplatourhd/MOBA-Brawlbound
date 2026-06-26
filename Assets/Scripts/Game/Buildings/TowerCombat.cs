@@ -35,6 +35,8 @@ public class TowerCombat : NetworkBehaviour
     private Building building;
     private NetworkObject currentTarget;
 
+    private bool hasManualTarget;
+
     private float nextScanTime;
     private float nextFireTime;
     private int nextBarrelIndex;
@@ -92,7 +94,7 @@ public class TowerCombat : NetworkBehaviour
 
     private void ServerUpdateTower()
     {
-        if (!CanTowerFight())
+        if (!CanFight())
         {
             currentTarget = null;
             ReturnPitchToRest();
@@ -100,6 +102,12 @@ public class TowerCombat : NetworkBehaviour
         }
 
         if (currentTarget == null || !IsTargetValid(currentTarget))
+        {
+            currentTarget = null;
+            hasManualTarget = false;
+        }
+
+        if (currentTarget == null && !hasManualTarget)
             TryFindTarget();
 
         if (currentTarget == null)
@@ -110,7 +118,8 @@ public class TowerCombat : NetworkBehaviour
 
         Vector3 aimPoint = GetAimPoint(currentTarget);
 
-        RotateTowardsTarget(aimPoint);
+        RotateYawTowards(aimPoint);
+        RotatePitchTowards(aimPoint);
 
         if (!IsAimedAtTarget(aimPoint))
             return;
@@ -123,7 +132,7 @@ public class TowerCombat : NetworkBehaviour
         FireAtTarget(aimPoint);
     }
 
-    private bool CanTowerFight()
+    private bool CanFight()
     {
         if (building == null)
             building = GetComponent<Building>();
@@ -138,6 +147,12 @@ public class TowerCombat : NetworkBehaviour
             return false;
 
         if (weapon.Range <= 0f)
+            return false;
+
+        if (yawPivot == null)
+            return false;
+
+        if (pitchPivot == null)
             return false;
 
         return true;
@@ -233,17 +248,8 @@ public class TowerCombat : NetworkBehaviour
         return true;
     }
 
-    private void RotateTowardsTarget(Vector3 aimPoint)
-    {
-        RotateYawTowards(aimPoint);
-        RotatePitchTowards(aimPoint);
-    }
-
     private void RotateYawTowards(Vector3 aimPoint)
     {
-        if (yawPivot == null)
-            return;
-
         float targetYaw = GetTargetYaw(aimPoint);
         float currentYaw = yawPivot.localEulerAngles.y;
 
@@ -259,9 +265,6 @@ public class TowerCombat : NetworkBehaviour
 
     private void RotatePitchTowards(Vector3 aimPoint)
     {
-        if (pitchPivot == null)
-            return;
-
         float targetPitch = GetTargetPitch(aimPoint);
         float currentPitch = pitchPivot.localEulerAngles.x;
 
@@ -294,22 +297,24 @@ public class TowerCombat : NetworkBehaviour
 
     private float GetTargetYaw(Vector3 aimPoint)
     {
-        if (yawPivot == null)
-            return 0f;
-
         Vector3 direction = aimPoint - yawPivot.position;
         direction.y = 0f;
 
         if (direction.sqrMagnitude < 0.01f)
             return yawPivot.localEulerAngles.y;
 
+        Vector3 worldDirection = direction.normalized;
+
         Transform parent = yawPivot.parent;
 
         Vector3 localDirection = parent != null
-            ? parent.InverseTransformDirection(direction.normalized)
-            : direction.normalized;
+            ? parent.InverseTransformDirection(worldDirection)
+            : worldDirection;
 
         localDirection.y = 0f;
+
+        if (localDirection.sqrMagnitude < 0.01f)
+            return yawPivot.localEulerAngles.y;
 
         float yaw = Mathf.Atan2(localDirection.x, localDirection.z) * Mathf.Rad2Deg;
         yaw += yawOffset;
@@ -319,23 +324,15 @@ public class TowerCombat : NetworkBehaviour
 
     private float GetTargetPitch(Vector3 aimPoint)
     {
-        if (pitchPivot == null)
-            return pitchRestX;
-
         Vector3 direction = aimPoint - pitchPivot.position;
 
         if (direction.sqrMagnitude < 0.01f)
             return pitchPivot.localEulerAngles.x;
 
-        Transform parent = pitchPivot.parent;
+        float horizontalDistance = new Vector2(direction.x, direction.z).magnitude;
+        float verticalDifference = direction.y;
 
-        Vector3 localDirection = parent != null
-            ? parent.InverseTransformDirection(direction.normalized)
-            : direction.normalized;
-
-        float horizontalDistance = new Vector2(localDirection.x, localDirection.z).magnitude;
-
-        float pitchAngle = Mathf.Atan2(localDirection.y, horizontalDistance) * Mathf.Rad2Deg;
+        float pitchAngle = Mathf.Atan2(verticalDifference, horizontalDistance) * Mathf.Rad2Deg;
 
         float targetPitch = invertPitch
             ? pitchRestX + pitchAngle
@@ -346,9 +343,6 @@ public class TowerCombat : NetworkBehaviour
 
     private bool IsAimedAtTarget(Vector3 aimPoint)
     {
-        if (yawPivot == null || pitchPivot == null)
-            return false;
-
         float targetYaw = GetTargetYaw(aimPoint);
         float currentYaw = yawPivot.localEulerAngles.y;
 
@@ -358,8 +352,17 @@ public class TowerCombat : NetworkBehaviour
         float yawDifference = Mathf.Abs(Mathf.DeltaAngle(currentYaw, targetYaw));
         float pitchDifference = Mathf.Abs(Mathf.DeltaAngle(currentPitch, targetPitch));
 
-        return yawDifference <= weapon.FiringArc &&
-               pitchDifference <= weapon.FiringArc;
+        bool aimed = yawDifference <= weapon.FiringArc &&
+                     pitchDifference <= weapon.FiringArc;
+
+        if (!aimed)
+        {
+            DebugTower(
+                $"Not aimed. Yaw diff: {yawDifference:F1}, Pitch diff: {pitchDifference:F1}"
+            );
+        }
+
+        return aimed;
     }
 
     private void FireAtTarget(Vector3 aimPoint)
@@ -367,7 +370,10 @@ public class TowerCombat : NetworkBehaviour
         Transform barrel = GetNextBarrel();
 
         if (barrel == null)
+        {
+            DebugTower("No barrel found.");
             return;
+        }
 
         Vector3 direction = aimPoint - barrel.position;
 
@@ -375,14 +381,14 @@ public class TowerCombat : NetworkBehaviour
             return;
 
         if (ServerProjectileSystem.Instance == null)
+        {
+            DebugTower("ServerProjectileSystem.Instance is null.");
             return;
+        }
 
-        ServerProjectileSystem.Instance.ServerFireProjectile(
-            null,
-            barrel.position,
-            direction.normalized,
-            weapon
-        );
+        ServerProjectileSystem.Instance.ServerFireProjectileFromBuilding(building, barrel.position, direction.normalized, weapon);
+
+        DebugTower($"Fired from {barrel.name}");
     }
 
     private Transform GetNextBarrel()
@@ -406,6 +412,15 @@ public class TowerCombat : NetworkBehaviour
 
     private Vector3 GetAimPoint(NetworkObject targetObject)
     {
+        Collider targetCollider = targetObject.GetComponentInChildren<Collider>();
+
+        if (targetCollider != null)
+        {
+            Vector3 point = targetCollider.bounds.center;
+            point.y += targetAimHeight;
+            return point;
+        }
+
         return targetObject.transform.position + Vector3.up * targetAimHeight;
     }
 
@@ -466,6 +481,7 @@ public class TowerCombat : NetworkBehaviour
         if (yawPivot != null)
         {
             Vector3 yawEuler = yawPivot.localEulerAngles;
+
             yawBaseX = yawEuler.x;
             yawBaseZ = yawEuler.z;
         }
@@ -473,7 +489,6 @@ public class TowerCombat : NetworkBehaviour
         if (pitchPivot != null)
         {
             Vector3 pitchEuler = pitchPivot.localEulerAngles;
-            pitchRestX = pitchEuler.x;
 
             pitchBaseY = pitchEuler.y;
             pitchBaseZ = pitchEuler.z;
@@ -486,5 +501,52 @@ public class TowerCombat : NetworkBehaviour
             return;
 
         Debug.Log($"[{gameObject.name}] {message}");
+    }
+
+    public void RequestAttackTarget(GameObject targetObject)
+    {
+        if (targetObject == null)
+            return;
+
+        if (building == null)
+            building = GetComponent<Building>();
+
+        if (building == null || !building.BelongsToLocalPlayer())
+            return;
+
+        NetworkObject targetNetworkObject = targetObject.GetComponent<NetworkObject>();
+
+        if (targetNetworkObject == null)
+            return;
+
+        RequestAttackTargetServerRpc(new NetworkObjectReference(targetNetworkObject));
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void RequestAttackTargetServerRpc(
+        NetworkObjectReference targetReference,
+        ServerRpcParams rpcParams = default)
+    {
+        ulong senderClientId = rpcParams.Receive.SenderClientId;
+
+        if (building == null)
+            building = GetComponent<Building>();
+
+        if (building == null)
+            return;
+
+        if (building.PlayerClientId.Value != senderClientId)
+            return;
+
+        if (!targetReference.TryGet(out NetworkObject targetObject))
+            return;
+
+        if (!IsTargetValid(targetObject))
+            return;
+
+        currentTarget = targetObject;
+        hasManualTarget = true;
+
+        DebugTower($"Manual tower target set: {targetObject.name}");
     }
 }
