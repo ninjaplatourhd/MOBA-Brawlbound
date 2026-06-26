@@ -1,5 +1,4 @@
 using Unity.Netcode;
-using UnityEngine;
 
 public class EconomyDebugInput : NetworkBehaviour
 {
@@ -10,7 +9,7 @@ public class EconomyDebugInput : NetworkBehaviour
 
         if (IngameConsole.IsTypingInConsole)
             return;
-
+        /*
         if (Input.GetKeyDown(KeyCode.F8))
         {
             AddMineralsServerRpc(100);
@@ -25,6 +24,7 @@ public class EconomyDebugInput : NetworkBehaviour
         {
             UsePowerServerRpc(5);
         }
+        */
     }
 
     [ServerRpc(RequireOwnership = false)]

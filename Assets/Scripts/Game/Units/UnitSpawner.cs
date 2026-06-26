@@ -24,7 +24,7 @@ public class UnitSpawner : NetworkBehaviour
 
         if (IngameConsole.IsTypingInConsole)
             return;
-
+        /*
         if (Input.GetKeyDown(KeyCode.P))
         {
             IngameConsole.print("Klikno sam p");
@@ -34,7 +34,7 @@ public class UnitSpawner : NetworkBehaviour
         {
             IngameConsole.print("Klikno sam o");
             TrySpawnTank("Leopard");
-        }
+        }*/
     }
 
     private void TrySpawnTank(string name)
