@@ -3604,7 +3604,7 @@ MonoBehaviour:
   komandniCentar: {fileID: 6879698237968875168, guid: 987c42a8e7b338b42a3f743f6ef62e51, type: 3}
   sklapacDroida: {fileID: 4194657564725196754, guid: 256bdd94b37b59646b49cd5cecd2dd5c, type: 3}
   fabrikaTenkova: {fileID: 1440644790430925745, guid: 28f3cec92cf0a9a4b8d1faf24083fc69, type: 3}
-  tower: {fileID: 625755366930771767, guid: 82edb7fea0641374f8583fd08c2a1cf1, type: 3}
+  tower: {fileID: 2033450377662861323, guid: d4f0fd79d1d64124086e9f258361bd2a, type: 3}
   komandniCentarRow: {fileID: 1923794812}
   sklapacDroidaRow: {fileID: 1213408600}
   fabrikaTenkovaRow: {fileID: 1089044277}
