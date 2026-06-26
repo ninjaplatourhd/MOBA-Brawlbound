@@ -17,6 +17,9 @@ public class ProductionButtonUI : MonoBehaviour
 
     public void SetupUnit(BuildableUnit unit, ProductionBuilding productionBuilding)
     {
+        if (unit == null)
+            return;
+
         if (labelText != null)
             labelText.text = unit.DisplayName;
 
@@ -37,21 +40,22 @@ public class ProductionButtonUI : MonoBehaviour
 
         button.onClick.AddListener(() =>
         {
-            Debug.Log($"Kliknuto production dugme: {unit.DisplayName} / {unit.UnitId}");
+            Debug.Log($"Kliknuto unit production dugme: {unit.DisplayName} / {unit.UnitId}");
 
             if (productionBuilding != null)
                 productionBuilding.RequestBuildUnit(unit.UnitId);
             else
-                Debug.LogWarning("ProductionBuilding reference je null na dugmetu.");
+                Debug.LogWarning("ProductionBuilding reference je null na unit dugmetu.");
         });
 
         button.interactable = true;
-
-        Debug.Log($"Setup dugmeta završen: {unit.DisplayName}");
     }
 
-    public void SetupUpgrade(BuildableUpgrade upgrade)
+    public void SetupUpgrade(BuildableUpgrade upgrade, ProductionBuilding productionBuilding)
     {
+        if (upgrade == null)
+            return;
+
         if (labelText != null)
             labelText.text = upgrade.DisplayName;
 
@@ -62,9 +66,24 @@ public class ProductionButtonUI : MonoBehaviour
         {
             iconImage.sprite = upgrade.Icon;
             iconImage.enabled = upgrade.Icon != null;
+            iconImage.raycastTarget = false;
         }
 
+        if (button == null)
+            button = GetComponent<Button>();
+
         button.onClick.RemoveAllListeners();
-        button.interactable = false;
+
+        button.onClick.AddListener(() =>
+        {
+            Debug.Log($"Kliknuto upgrade dugme: {upgrade.DisplayName} / {upgrade.UpgradeId}");
+
+            if (productionBuilding != null)
+                productionBuilding.RequestBuildUpgrade(upgrade.UpgradeId);
+            else
+                Debug.LogWarning("ProductionBuilding reference je null na upgrade dugmetu.");
+        });
+
+        button.interactable = true;
     }
 }

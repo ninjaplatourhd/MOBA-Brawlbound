@@ -229,7 +229,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1010834871
+  GlobalObjectIdHash: 3723279128
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -256,6 +256,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   _markerObject: {fileID: 6043398241654865539}
+  playerColorObjects: []
+  colorPropertyName: _BaseColor
   PlayerClientId:
     m_InternalValue: 0
   Health:
@@ -277,7 +279,7 @@ MonoBehaviour:
   BuildingId: coal_powerplant
   DisplayName: Coal Powerplant
   SightRadius: 20
-  MaxHealth: 500
+  MaxHealth: 300
   Armor: 20
   CanBuildUnits: 1
   BuildableUnits: []
@@ -288,6 +290,8 @@ MonoBehaviour:
     MineralCost: 500
     RequiredFreePower: 20
     RequiredTechTier: 1
+    RequiredCompletedUpgrades: []
+    SetTechTierOnComplete: 0
     ResearchTime: 30
   - UpgradeId: furnace_upg_2
     DisplayName: Furnace Upgrade 2
@@ -295,6 +299,8 @@ MonoBehaviour:
     MineralCost: 800
     RequiredFreePower: 30
     RequiredTechTier: 2
+    RequiredCompletedUpgrades: []
+    SetTechTierOnComplete: 0
     ResearchTime: 50
   Icon: {fileID: 21300000, guid: ffdef083d02d8834db8c36322f838126, type: 3}
 --- !u!114 &6243157077161404925

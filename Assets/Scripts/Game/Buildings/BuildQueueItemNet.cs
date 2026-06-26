@@ -4,6 +4,11 @@ using Unity.Netcode;
 
 public struct BuildQueueItemNet : INetworkSerializable, IEquatable<BuildQueueItemNet>
 {
+    public const int TypeUnit = 0;
+    public const int TypeUpgrade = 1;
+
+    public int ItemType;
+
     public FixedString64Bytes UnitId;
     public FixedString64Bytes DisplayName;
 
@@ -15,6 +20,7 @@ public struct BuildQueueItemNet : INetworkSerializable, IEquatable<BuildQueueIte
 
     public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
     {
+        serializer.SerializeValue(ref ItemType);
         serializer.SerializeValue(ref UnitId);
         serializer.SerializeValue(ref DisplayName);
         serializer.SerializeValue(ref MineralCost);
@@ -25,7 +31,8 @@ public struct BuildQueueItemNet : INetworkSerializable, IEquatable<BuildQueueIte
 
     public bool Equals(BuildQueueItemNet other)
     {
-        return UnitId.Equals(other.UnitId)
+        return ItemType == other.ItemType
+            && UnitId.Equals(other.UnitId)
             && DisplayName.Equals(other.DisplayName)
             && MineralCost == other.MineralCost
             && PowerUpkeep == other.PowerUpkeep

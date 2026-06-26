@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 [Serializable]
@@ -15,6 +16,10 @@ public class BuildableUpgrade
 
     [Header("Requirements")]
     public int RequiredTechTier = 1;
+    public List<string> RequiredCompletedUpgrades = new List<string>();
+
+    [Header("Result")]
+    public int SetTechTierOnComplete = 0;
 
     [Header("Research")]
     public float ResearchTime = 10f;

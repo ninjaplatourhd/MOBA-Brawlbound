@@ -107,7 +107,7 @@ public class WorkerBuilder : NetworkBehaviour
         if (gameData.Minerals < buildableBuilding.MineralCost)
             return false;
 
-        if (gameData.PowerAvailable < buildableBuilding.RequiredFreePower)
+        if (buildableBuilding.RequiredFreePower > 0 && gameData.PowerAvailable < buildableBuilding.RequiredFreePower)
             return false;
 
         return true;

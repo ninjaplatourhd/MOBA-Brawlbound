@@ -273,16 +273,16 @@ public class BuildingPlacementSystem : MonoBehaviour
         if (PlayerEconomyManager.Instance == null)
             return false;
 
-        if (!PlayerEconomyManager.Instance.TryGetPlayerState(clientId, out PlayerGameData gammeData))
+        if (!PlayerEconomyManager.Instance.TryGetPlayerState(clientId, out PlayerGameData gameData))
             return false;
 
-        if (gammeData.TechTier < buildableBuilding.RequiredTechTier)
+        if (gameData.TechTier < buildableBuilding.RequiredTechTier)
             return false;
 
-        if (gammeData.Minerals < buildableBuilding.MineralCost)
+        if (gameData.Minerals < buildableBuilding.MineralCost)
             return false;
 
-        if (gammeData.PowerAvailable < buildableBuilding.RequiredFreePower)
+        if (buildableBuilding.RequiredFreePower > 0 && gameData.PowerAvailable < buildableBuilding.RequiredFreePower)
             return false;
 
         return true;

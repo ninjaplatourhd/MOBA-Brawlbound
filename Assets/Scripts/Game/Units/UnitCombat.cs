@@ -152,6 +152,12 @@ public class UnitCombat : NetworkBehaviour
         if (ownedTarget.OwnerClientId == senderClientId)
             return;
 
+        if (!ServerCanOwnerSeeTarget(senderClientId, targetObject))
+        {
+            DebugCombat("Manual attack rejected because target is not visible.");
+            return;
+        }
+
         if (movement != null)
         {
             movement.ServerClearPatrol();
@@ -212,6 +218,17 @@ public class UnitCombat : NetworkBehaviour
         if (IsTargetInvalidOrDead())
         {
             DebugCombat("Current target invalid or dead.");
+            currentTarget = null;
+
+            if (movement != null)
+                movement.ServerClearCombatLookTarget();
+
+            return;
+        }
+
+        if (!ServerCanOwnerSeeTarget(unit.PlayerClientId.Value, currentTarget))
+        {
+            DebugCombat("Current target lost because it is no longer visible.");
             currentTarget = null;
 
             if (movement != null)
@@ -328,9 +345,9 @@ public class UnitCombat : NetworkBehaviour
     }
 
     private void TryConsiderAutoAggroTarget(
-        GameObject targetObj,
-        ref NetworkObject bestTarget,
-        ref float bestDistanceSqr)
+      GameObject targetObj,
+      ref NetworkObject bestTarget,
+      ref float bestDistanceSqr)
     {
         if (targetObj == null || targetObj == gameObject)
             return;
@@ -350,11 +367,14 @@ public class UnitCombat : NetworkBehaviour
 
         float distanceSqr = (targetObj.transform.position - transform.position).sqrMagnitude;
 
-        if (distanceSqr <= bestDistanceSqr)
-        {
-            bestDistanceSqr = distanceSqr;
-            bestTarget = targetNetworkObject;
-        }
+        if (distanceSqr > bestDistanceSqr)
+            return;
+
+        if (!ServerCanOwnerSeeTarget(unit.PlayerClientId.Value, targetNetworkObject))
+            return;
+
+        bestDistanceSqr = distanceSqr;
+        bestTarget = targetNetworkObject;
     }
 
     private void NotifyTargetThatItIsBeingAttacked(NetworkObject targetObject)
@@ -801,5 +821,101 @@ public class UnitCombat : NetworkBehaviour
             return 0f;
 
         return weapon.WeaponYawOffset;
+    }
+
+    private bool ServerCanOwnerSeeTarget(ulong ownerClientId, NetworkObject targetNetworkObject)
+    {
+        if (!IsServer)
+            return false;
+
+        if (targetNetworkObject == null || !targetNetworkObject.IsSpawned)
+            return false;
+
+        Collider targetCollider = targetNetworkObject.GetComponent<Collider>();
+        Vector3 targetPosition = targetNetworkObject.transform.position;
+
+        if (UnitManager.instance != null)
+        {
+            foreach (GameObject unitObj in UnitManager.instance.AllUnitsList)
+            {
+                if (unitObj == null)
+                    continue;
+
+                Unit friendlyUnit = unitObj.GetComponent<Unit>();
+
+                if (friendlyUnit == null)
+                    continue;
+
+                if (friendlyUnit.PlayerClientId.Value != ownerClientId)
+                    continue;
+
+                if (friendlyUnit.Health.Value <= 0f)
+                    continue;
+
+                UnitData friendlyData = friendlyUnit.Data;
+
+                if (friendlyData == null)
+                    friendlyData = friendlyUnit.GetComponent<UnitData>();
+
+                if (friendlyData == null)
+                    continue;
+
+                if (friendlyData.SightRadius <= 0f)
+                    continue;
+
+                Vector3 closestTargetPoint = targetCollider != null
+                    ? targetCollider.ClosestPoint(friendlyUnit.transform.position)
+                    : targetPosition;
+
+                float distanceSqr = (closestTargetPoint - friendlyUnit.transform.position).sqrMagnitude;
+                float sightSqr = friendlyData.SightRadius * friendlyData.SightRadius;
+
+                if (distanceSqr <= sightSqr)
+                    return true;
+            }
+        }
+
+        if (BuildingManager.instance != null)
+        {
+            foreach (GameObject buildingObj in BuildingManager.instance.AllBuildingsList)
+            {
+                if (buildingObj == null)
+                    continue;
+
+                Building friendlyBuilding = buildingObj.GetComponent<Building>();
+
+                if (friendlyBuilding == null)
+                    continue;
+
+                if (friendlyBuilding.PlayerClientId.Value != ownerClientId)
+                    continue;
+
+                if (friendlyBuilding.Health.Value <= 0f)
+                    continue;
+
+                BuildingData friendlyData = friendlyBuilding.Data;
+
+                if (friendlyData == null)
+                    friendlyData = friendlyBuilding.GetComponent<BuildingData>();
+
+                if (friendlyData == null)
+                    continue;
+
+                if (friendlyData.SightRadius <= 0f)
+                    continue;
+
+                Vector3 closestTargetPoint = targetCollider != null
+                    ? targetCollider.ClosestPoint(friendlyBuilding.transform.position)
+                    : targetPosition;
+
+                float distanceSqr = (closestTargetPoint - friendlyBuilding.transform.position).sqrMagnitude;
+                float sightSqr = friendlyData.SightRadius * friendlyData.SightRadius;
+
+                if (distanceSqr <= sightSqr)
+                    return true;
+            }
+        }
+
+        return false;
     }
 }

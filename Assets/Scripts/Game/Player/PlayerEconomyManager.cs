@@ -113,7 +113,7 @@ public class PlayerEconomyManager : NetworkBehaviour
         return true;
     }
 
-    public bool CanAfford(ulong clientId, int mineralCost, int requiredFreePower = 0)
+    public bool CanAfford(ulong clientId, int mineralCost, int requiredFreePower)
     {
         if (!TryGetPlayerState(clientId, out PlayerGameData data))
             return false;
@@ -124,10 +124,10 @@ public class PlayerEconomyManager : NetworkBehaviour
         if (data.Minerals < mineralCost)
             return false;
 
-        if (data.PowerAvailable < requiredFreePower)
-            return false;
+        if (requiredFreePower <= 0)
+            return true;
 
-        return true;
+        return data.PowerAvailable >= requiredFreePower;
     }
 
     public bool TrySpendMinerals(ulong clientId, int amount)

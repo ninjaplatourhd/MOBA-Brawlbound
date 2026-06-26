@@ -1016,7 +1016,36 @@ MonoBehaviour:
     RequiredFreePower: 0
     PowerUpkeep: 0
     RequiredTechTier: 1
+    PlacementHeightOffset: 0
     BuildTime: 30
+    FootprintSize: {x: 2, y: 2}
+    RequiresVisibleArea: 1
+  - BuildingId: sklapac_droida
+    DisplayName: Sklapac Droida
+    Icon: {fileID: 21300000, guid: 8a0921528b4ebf643baa34e051253113, type: 3}
+    FinalBuildingPrefab: {fileID: 8853078620721155927, guid: 256bdd94b37b59646b49cd5cecd2dd5c, type: 3}
+    ConstructionSitePrefab: {fileID: 367113461472115957, guid: 82edb7fea0641374f8583fd08c2a1cf1, type: 3}
+    PreviewPrefab: {fileID: 6159383171056682055, guid: 5fc480b3554b56d488a735e02c7024b6, type: 3}
+    MineralCost: 300
+    RequiredFreePower: 12
+    PowerUpkeep: 12
+    RequiredTechTier: 1
+    PlacementHeightOffset: 2.2
+    BuildTime: 40
+    FootprintSize: {x: 2, y: 2}
+    RequiresVisibleArea: 1
+  - BuildingId: fabrika_tenkova
+    DisplayName: Fabrika Tenkova
+    Icon: {fileID: 21300000, guid: d6ea9413a66a1e74b9a9e4276581c98a, type: 3}
+    FinalBuildingPrefab: {fileID: 4126606116651774723, guid: 28f3cec92cf0a9a4b8d1faf24083fc69, type: 3}
+    ConstructionSitePrefab: {fileID: 367113461472115957, guid: 82edb7fea0641374f8583fd08c2a1cf1, type: 3}
+    PreviewPrefab: {fileID: 6679731845649226270, guid: 53d508596a65b894fafcf8ffb3daf0c1, type: 3}
+    MineralCost: 650
+    RequiredFreePower: 20
+    PowerUpkeep: 20
+    RequiredTechTier: 1
+    PlacementHeightOffset: 0
+    BuildTime: 40
     FootprintSize: {x: 2, y: 2}
     RequiresVisibleArea: 1
   buildRange: 6

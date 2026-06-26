@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -6,7 +6,10 @@ using UnityEngine.AI;
 
 public class ProductionBuilding : NetworkBehaviour
 {
+    private static readonly Dictionary<ulong, HashSet<string>> completedUpgradesByPlayer = new Dictionary<ulong, HashSet<string>>();
+
     [SerializeField] private Transform spawnPoint;
+    [SerializeField] private int maxQueueSize = 5;
 
     private Building building;
     private BuildingData data;
@@ -59,22 +62,14 @@ public class ProductionBuilding : NetworkBehaviour
 
     public void RequestBuildUnit(string unitId)
     {
-        Debug.Log($"RequestBuildUnit pozvan za: {unitId}");
-
         if (building == null)
             building = GetComponent<Building>();
 
         if (building == null)
-        {
-            Debug.LogWarning("RequestBuildUnit failed: building je null.");
             return;
-        }
 
         if (!building.BelongsToLocalPlayer())
-        {
-            Debug.LogWarning("RequestBuildUnit failed: building ne pripada lokalnom playeru.");
             return;
-        }
 
         RequestBuildUnitServerRpc(unitId);
     }
@@ -84,35 +79,26 @@ public class ProductionBuilding : NetworkBehaviour
     {
         ulong senderClientId = rpcParams.Receive.SenderClientId;
 
-        if (building == null)
-            building = GetComponent<Building>();
-
-        if (building == null)
-            return;
-
-        if (building.PlayerClientId.Value != senderClientId)
+        if (!ServerValidateOwner(senderClientId))
             return;
 
         BuildableUnit buildableUnit = FindBuildableUnit(unitId);
 
         if (buildableUnit == null)
         {
-            Debug.LogWarning($"{gameObject.name} ne mo�e da pravi unit: {unitId}");
+            Debug.LogWarning($"{gameObject.name} ne može da pravi unit: {unitId}");
             return;
         }
 
         if (PlayerEconomyManager.Instance == null)
-        {
-            Debug.LogWarning("PlayerEconomyManager ne postoji u sceni.");
             return;
-        }
 
         if (!PlayerEconomyManager.Instance.TryGetPlayerState(senderClientId, out PlayerGameData economyData))
             return;
 
         if (economyData.TechTier < buildableUnit.RequiredTechTier)
         {
-            Debug.LogWarning($"Nema� potreban tech tier za {buildableUnit.DisplayName}.");
+            Debug.LogWarning($"Nemaš potreban tech tier za {buildableUnit.DisplayName}.");
             return;
         }
 
@@ -121,7 +107,7 @@ public class ProductionBuilding : NetworkBehaviour
                 buildableUnit.MineralCost,
                 buildableUnit.PowerUpkeep))
         {
-            Debug.LogWarning($"Nema� resurse za {buildableUnit.DisplayName}.");
+            Debug.LogWarning($"Nemaš resurse za {buildableUnit.DisplayName}.");
             return;
         }
 
@@ -130,6 +116,7 @@ public class ProductionBuilding : NetworkBehaviour
 
         BuildQueue.Add(new BuildQueueItemNet
         {
+            ItemType = BuildQueueItemNet.TypeUnit,
             UnitId = new FixedString64Bytes(buildableUnit.UnitId),
             DisplayName = new FixedString64Bytes(buildableUnit.DisplayName),
             MineralCost = buildableUnit.MineralCost,
@@ -137,8 +124,96 @@ public class ProductionBuilding : NetworkBehaviour
             BuildTime = buildableUnit.BuildTime,
             RemainingTime = buildableUnit.BuildTime
         });
+    }
 
-        Debug.Log($"{gameObject.name} added to queue: {buildableUnit.DisplayName}");
+    public void RequestBuildUpgrade(string upgradeId)
+    {
+        if (building == null)
+            building = GetComponent<Building>();
+
+        if (building == null)
+            return;
+
+        if (!building.BelongsToLocalPlayer())
+            return;
+
+        RequestBuildUpgradeServerRpc(upgradeId);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void RequestBuildUpgradeServerRpc(string upgradeId, ServerRpcParams rpcParams = default)
+    {
+        ulong senderClientId = rpcParams.Receive.SenderClientId;
+
+        if (!ServerValidateOwner(senderClientId))
+            return;
+
+        if (IsQueueFull())
+        {
+            Debug.LogWarning($"{gameObject.name} build queue je pun.");
+            return;
+        }
+
+        BuildableUpgrade upgrade = FindBuildableUpgrade(upgradeId);
+
+        if (upgrade == null)
+        {
+            Debug.LogWarning($"{gameObject.name} ne može da pravi upgrade: {upgradeId}");
+            return;
+        }
+
+        if (ServerHasCompletedUpgrade(senderClientId, upgrade.UpgradeId))
+        {
+            Debug.LogWarning($"Upgrade je već završen: {upgrade.DisplayName}");
+            return;
+        }
+
+        if (ServerHasUpgradeQueued(upgrade.UpgradeId))
+        {
+            Debug.LogWarning($"Upgrade je već u queue-u: {upgrade.DisplayName}");
+            return;
+        }
+
+        if (PlayerEconomyManager.Instance == null)
+            return;
+
+        if (!PlayerEconomyManager.Instance.TryGetPlayerState(senderClientId, out PlayerGameData economyData))
+            return;
+
+        if (economyData.TechTier < upgrade.RequiredTechTier)
+        {
+            Debug.LogWarning($"Nemaš potreban tech tier za {upgrade.DisplayName}.");
+            return;
+        }
+
+        if (!ServerHasRequiredCompletedUpgrades(senderClientId, upgrade))
+        {
+            Debug.LogWarning($"Nisu ispunjeni prerequisite upgradeovi za {upgrade.DisplayName}.");
+            return;
+        }
+
+        if (!PlayerEconomyManager.Instance.CanAfford(
+                senderClientId,
+                upgrade.MineralCost,
+                upgrade.RequiredFreePower))
+        {
+            Debug.LogWarning($"Nemaš resurse za {upgrade.DisplayName}.");
+            return;
+        }
+
+        if (!PlayerEconomyManager.Instance.TrySpendMinerals(senderClientId, upgrade.MineralCost))
+            return;
+
+        BuildQueue.Add(new BuildQueueItemNet
+        {
+            ItemType = BuildQueueItemNet.TypeUpgrade,
+            UnitId = new FixedString64Bytes(upgrade.UpgradeId),
+            DisplayName = new FixedString64Bytes(upgrade.DisplayName),
+            MineralCost = upgrade.MineralCost,
+            PowerUpkeep = 0,
+            BuildTime = upgrade.ResearchTime,
+            RemainingTime = upgrade.ResearchTime
+        });
     }
 
     public void RequestCancelQueueItem(int index)
@@ -160,13 +235,7 @@ public class ProductionBuilding : NetworkBehaviour
     {
         ulong senderClientId = rpcParams.Receive.SenderClientId;
 
-        if (building == null)
-            building = GetComponent<Building>();
-
-        if (building == null)
-            return;
-
-        if (building.PlayerClientId.Value != senderClientId)
+        if (!ServerValidateOwner(senderClientId))
             return;
 
         if (index < 0 || index >= BuildQueue.Count)
@@ -174,10 +243,22 @@ public class ProductionBuilding : NetworkBehaviour
 
         BuildQueueItemNet item = BuildQueue[index];
 
-        if (PlayerEconomyManager.Instance != null)
-            PlayerEconomyManager.Instance.AddMinerals(senderClientId, item.MineralCost);
+        int refund = CalculateCancelRefund(item);
+
+        if (PlayerEconomyManager.Instance != null && refund > 0)
+            PlayerEconomyManager.Instance.AddMinerals(senderClientId, refund);
 
         BuildQueue.RemoveAt(index);
+    }
+
+    private int CalculateCancelRefund(BuildQueueItemNet item)
+    {
+        if (item.BuildTime <= 0.01f)
+            return item.MineralCost;
+
+        float remainingPercent = Mathf.Clamp01(item.RemainingTime / item.BuildTime);
+
+        return Mathf.RoundToInt(item.MineralCost * remainingPercent);
     }
 
     private void ServerUpdateQueue()
@@ -197,21 +278,29 @@ public class ProductionBuilding : NetworkBehaviour
 
         ulong ownerClientId = building.PlayerClientId.Value;
 
-        if (PlayerEconomyManager.Instance != null)
-        {
-            if (!PlayerEconomyManager.Instance.CanAfford(ownerClientId, 0, currentItem.PowerUpkeep))
-            {
-                currentItem.RemainingTime = 0.1f;
-                BuildQueue[0] = currentItem;
-                return;
-            }
-        }
-
-        string completedUnitId = currentItem.UnitId.ToString();
-
         BuildQueue.RemoveAt(0);
 
-        SpawnCompletedUnit(completedUnitId, currentItem.PowerUpkeep);
+        if (currentItem.ItemType == BuildQueueItemNet.TypeUnit)
+        {
+            if (PlayerEconomyManager.Instance != null)
+            {
+                if (!PlayerEconomyManager.Instance.CanAfford(ownerClientId, 0, currentItem.PowerUpkeep))
+                {
+                    currentItem.RemainingTime = 0.1f;
+                    BuildQueue.Insert(0, currentItem);
+                    return;
+                }
+            }
+
+            SpawnCompletedUnit(currentItem.UnitId.ToString(), currentItem.PowerUpkeep);
+            return;
+        }
+
+        if (currentItem.ItemType == BuildQueueItemNet.TypeUpgrade)
+        {
+            CompleteUpgrade(ownerClientId, currentItem.UnitId.ToString());
+            return;
+        }
     }
 
     private void SpawnCompletedUnit(string unitId, int powerUpkeep)
@@ -267,6 +356,44 @@ public class ProductionBuilding : NetworkBehaviour
         Debug.Log($"Spawned completed unit: {unitId}");
     }
 
+    private void CompleteUpgrade(ulong ownerClientId, string upgradeId)
+    {
+        BuildableUpgrade upgrade = FindBuildableUpgrade(upgradeId);
+
+        if (upgrade == null)
+        {
+            Debug.LogError($"Ne mogu da završim upgrade: {upgradeId}");
+            return;
+        }
+
+        ServerMarkUpgradeCompleted(ownerClientId, upgrade.UpgradeId);
+
+        if (upgrade.SetTechTierOnComplete > 0 &&
+            PlayerEconomyManager.Instance != null)
+        {
+            if (PlayerEconomyManager.Instance.TryGetPlayerState(ownerClientId, out PlayerGameData economyData))
+            {
+                if (economyData.TechTier < upgrade.SetTechTierOnComplete)
+                {
+                    PlayerEconomyManager.Instance.SetTechTier(ownerClientId, upgrade.SetTechTierOnComplete);
+                }
+            }
+        }
+
+        Debug.Log($"Completed upgrade: {upgrade.DisplayName}");
+    }
+
+    private bool ServerValidateOwner(ulong senderClientId)
+    {
+        if (building == null)
+            building = GetComponent<Building>();
+
+        if (building == null)
+            return false;
+
+        return building.PlayerClientId.Value == senderClientId;
+    }
+
     private BuildableUnit FindBuildableUnit(string unitId)
     {
         if (data == null)
@@ -282,5 +409,96 @@ public class ProductionBuilding : NetworkBehaviour
         }
 
         return null;
+    }
+
+    private BuildableUpgrade FindBuildableUpgrade(string upgradeId)
+    {
+        if (data == null)
+            data = GetComponent<BuildingData>();
+
+        if (data == null || data.BuildableUpgrades == null)
+            return null;
+
+        foreach (BuildableUpgrade upgrade in data.BuildableUpgrades)
+        {
+            if (upgrade.UpgradeId == upgradeId)
+                return upgrade;
+        }
+
+        return null;
+    }
+
+    public Sprite GetIconForQueueItem(BuildQueueItemNet item)
+    {
+        if (item.ItemType == BuildQueueItemNet.TypeUnit)
+        {
+            BuildableUnit unit = FindBuildableUnit(item.UnitId.ToString());
+            return unit != null ? unit.Icon : null;
+        }
+
+        if (item.ItemType == BuildQueueItemNet.TypeUpgrade)
+        {
+            BuildableUpgrade upgrade = FindBuildableUpgrade(item.UnitId.ToString());
+            return upgrade != null ? upgrade.Icon : null;
+        }
+
+        return null;
+    }
+
+    private bool ServerHasRequiredCompletedUpgrades(ulong ownerClientId, BuildableUpgrade upgrade)
+    {
+        if (upgrade.RequiredCompletedUpgrades == null || upgrade.RequiredCompletedUpgrades.Count == 0)
+            return true;
+
+        foreach (string requiredUpgradeId in upgrade.RequiredCompletedUpgrades)
+        {
+            if (string.IsNullOrWhiteSpace(requiredUpgradeId))
+                continue;
+
+            if (!ServerHasCompletedUpgrade(ownerClientId, requiredUpgradeId))
+                return false;
+        }
+
+        return true;
+    }
+
+    private bool ServerHasCompletedUpgrade(ulong ownerClientId, string upgradeId)
+    {
+        if (completedUpgradesByPlayer.TryGetValue(ownerClientId, out HashSet<string> completed))
+            return completed.Contains(upgradeId);
+
+        return false;
+    }
+
+    private void ServerMarkUpgradeCompleted(ulong ownerClientId, string upgradeId)
+    {
+        if (!completedUpgradesByPlayer.TryGetValue(ownerClientId, out HashSet<string> completed))
+        {
+            completed = new HashSet<string>();
+            completedUpgradesByPlayer[ownerClientId] = completed;
+        }
+
+        completed.Add(upgradeId);
+    }
+
+    private bool ServerHasUpgradeQueued(string upgradeId)
+    {
+        for (int i = 0; i < BuildQueue.Count; i++)
+        {
+            BuildQueueItemNet item = BuildQueue[i];
+
+            if (item.ItemType != BuildQueueItemNet.TypeUpgrade)
+                continue;
+
+            if (item.UnitId.ToString() == upgradeId)
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool IsQueueFull()
+    {
+        return BuildQueue != null && BuildQueue.Count >= maxQueueSize;
     }
 }

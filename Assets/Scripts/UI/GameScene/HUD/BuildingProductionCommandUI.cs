@@ -53,7 +53,7 @@ public class BuildingProductionCommandUI : MonoBehaviour
                 continue;
 
             ProductionButtonUI button = Instantiate(productionButtonPrefab, upgradeButtonContainer);
-            button.SetupUpgrade(upgrade);
+            button.SetupUpgrade(upgrade, productionBuilding);
         }
     }
 
