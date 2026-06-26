@@ -130,6 +130,64 @@ public class PlayerEconomyManager : NetworkBehaviour
         return data.PowerAvailable >= requiredFreePower;
     }
 
+    public bool CanResearchUpgrade(ulong clientId, BuildableUpgrade upgrade)
+    {
+        if (upgrade == null)
+            return false;
+
+        if (!TryGetPlayerState(clientId, out PlayerGameData data))
+            return false;
+
+        if (data.IsDefeated)
+            return false;
+
+        if (data.TechTier < upgrade.RequiredTechTier)
+            return false;
+
+        if (upgrade.SetTechTierOnComplete > 0 &&
+            data.TechTier >= upgrade.SetTechTierOnComplete)
+            return false;
+
+        if (data.Minerals < upgrade.MineralCost)
+            return false;
+
+        if (upgrade.RequiredFreePower > 0 &&
+            data.PowerAvailable < upgrade.RequiredFreePower)
+            return false;
+
+        return true;
+    }
+
+    public bool CompleteUpgrade(ulong clientId, BuildableUpgrade upgrade)
+    {
+        if (!IsServer)
+            return false;
+
+        if (upgrade == null)
+            return false;
+
+        int index = FindPlayerIndex(clientId);
+
+        if (index < 0)
+            return false;
+
+        PlayerGameData data = playerEconomyStates[index];
+
+        if (data.IsDefeated)
+            return false;
+
+        if (upgrade.SetTechTierOnComplete <= 0)
+            return false;
+
+        if (data.TechTier >= upgrade.SetTechTierOnComplete)
+            return false;
+
+        data.TechTier = upgrade.SetTechTierOnComplete;
+        playerEconomyStates[index] = data;
+
+        return true;
+    }
+
     public bool TrySpendMinerals(ulong clientId, int amount)
     {
         if (!IsServer)
@@ -166,14 +224,17 @@ public class PlayerEconomyManager : NetworkBehaviour
 
         PlayerGameData data = playerEconomyStates[index];
 
+        if (data.IsDefeated)
+            return false;
+
         if (data.Minerals < mineralCost)
             return false;
 
-        if (data.PowerAvailable < powerToReserve)
+        if (powerToReserve > 0 && data.PowerAvailable < powerToReserve)
             return false;
 
         data.Minerals -= mineralCost;
-        data.PowerUsed += powerToReserve;
+        data.PowerUsed += Mathf.Max(0, powerToReserve);
 
         playerEconomyStates[index] = data;
 

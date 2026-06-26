@@ -513,7 +513,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3322998737
+  GlobalObjectIdHash: 1957339773
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -563,8 +563,8 @@ MonoBehaviour:
   BuildingId: komandni_centar
   DisplayName: Komandni Centar
   SightRadius: 60
-  MaxHealth: 1000
-  Armor: 20
+  MaxHealth: 500
+  Armor: 10
   CanBuildUnits: 1
   BuildableUnits:
   - UnitId: worker
@@ -576,7 +576,35 @@ MonoBehaviour:
     PowerUpkeep: 1
     RequiredTechTier: 1
     BuildTime: 5
-  BuildableUpgrades: []
+  - UnitId: basic_combat_droid
+    DisplayName: Basic Combat Droid
+    Icon: {fileID: 21300000, guid: 901c08d0b2724b0438df419a076a2bb4, type: 3}
+    UnitPrefab: {fileID: 1297313452861828389, guid: 6cb4a317bd91c0b44ae3162d28698051, type: 3}
+    MineralCost: 70
+    PowerCost: 2
+    PowerUpkeep: 2
+    RequiredTechTier: 1
+    BuildTime: 4
+  BuildableUpgrades:
+  - UpgradeId: tech_2
+    DisplayName: Tech Tier 2
+    Icon: {fileID: 21300000, guid: cb4c1138e003bc34186b86ab86f7b757, type: 3}
+    MineralCost: 600
+    RequiredFreePower: 30
+    RequiredTechTier: 1
+    RequiredCompletedUpgrades: []
+    SetTechTierOnComplete: 2
+    ResearchTime: 40
+  - UpgradeId: tech_3
+    DisplayName: Tech Tier 3
+    Icon: {fileID: 21300000, guid: 45d375a35982ae642abe36ec40a3704d, type: 3}
+    MineralCost: 1100
+    RequiredFreePower: 40
+    RequiredTechTier: 2
+    RequiredCompletedUpgrades:
+    - tech_2
+    SetTechTierOnComplete: 3
+    ResearchTime: 60
   Icon: {fileID: 21300000, guid: e86cf5b273a38c34c92757f144175a87, type: 3}
 --- !u!114 &607150952192085328
 MonoBehaviour:

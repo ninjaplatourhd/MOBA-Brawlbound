@@ -732,6 +732,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UnitId: artillery_tank_gvozdena_pracka
   DisplayName: Artilley Tank Gvozdena Pracka
+  RequiredTechLevel: 3
   SightRadius: 45
   MovesGun: 0
   Range: 80
@@ -749,7 +750,11 @@ MonoBehaviour:
     Range: 80
     RotationSpeed: 0
     FiringArc: 15
+    MovesGun: 0
+    GunPivot: {fileID: 0}
     WeaponYawOffset: 0
+    Barrels:
+    - {fileID: 4706218163313266660}
     DamageType: 0
     ProjectileType: 0
     ProjectileName: VelikiMetak12
@@ -773,14 +778,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   fallbackBarrel: {fileID: 0}
-  projectileSpeed: 35
   autoAggroInterval: 0.5
   autoAggroDelayAfterMoveOrder: 1
   autoAggroRangeMultiplier: 1.25
   attackRangeFactor: 0.9
   minimumAttackDistance: 1.5
-  turretYawOffset: 0
-  turretYawSyncThreshold: 0.05
+  weaponYawSyncThreshold: 0.05
   debugCombat: 0
 --- !u!114 &809577496292870138
 MonoBehaviour:

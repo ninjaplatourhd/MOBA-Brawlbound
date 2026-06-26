@@ -6,6 +6,7 @@ public class UnitData : MonoBehaviour
     [Header("General")]
     public string UnitId = "super_heavy_tank_malj";
     public string DisplayName = "Super Heavy Tank (Malj)";
+    public int RequiredTechLevel = 1;
 
     [Header("Vision")]
     public float SightRadius = 40f;

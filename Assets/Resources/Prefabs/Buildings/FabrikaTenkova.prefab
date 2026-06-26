@@ -579,7 +579,7 @@ MonoBehaviour:
     MineralCost: 50
     PowerCost: 10
     PowerUpkeep: 1
-    RequiredTechTier: 1
+    RequiredTechTier: 2
     BuildTime: 6
   - UnitId: all_rounder_tank_milos
     DisplayName: All Rounder Tank (Milos)
@@ -588,7 +588,7 @@ MonoBehaviour:
     MineralCost: 100
     PowerCost: 15
     PowerUpkeep: 5
-    RequiredTechTier: 1
+    RequiredTechTier: 2
     BuildTime: 10
   - UnitId: artillery_tank_gvozdena_pracka
     DisplayName: Artillery Tank Gvozdena Pracka
@@ -597,7 +597,7 @@ MonoBehaviour:
     MineralCost: 150
     PowerCost: 13
     PowerUpkeep: 13
-    RequiredTechTier: 1
+    RequiredTechTier: 3
     BuildTime: 15
   - UnitId: super_heavy_tank_malj
     DisplayName: Super Heavy Tank (Malj)
@@ -606,7 +606,7 @@ MonoBehaviour:
     MineralCost: 200
     PowerCost: 20
     PowerUpkeep: 20
-    RequiredTechTier: 1
+    RequiredTechTier: 3
     BuildTime: 20
   BuildableUpgrades: []
   Icon: {fileID: 21300000, guid: d6ea9413a66a1e74b9a9e4276581c98a, type: 3}
