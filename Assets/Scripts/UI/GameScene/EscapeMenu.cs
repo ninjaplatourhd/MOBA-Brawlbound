@@ -39,9 +39,20 @@ public class EscapeMenu : MonoBehaviour
     public void Surrender()
     {
         Time.timeScale = 1f;
+
+        isOpen = false;
+
+        if (menuPanel != null)
+            menuPanel.SetActive(false);
+
+        if (GameOverManager.Instance != null)
+        {
+            GameOverManager.Instance.RequestSurrender();
+            return;
+        }
+
         SceneManager.LoadScene("MultiplayerMenu");
     }
-
     public void QuitGame()
     {
 #if UNITY_EDITOR

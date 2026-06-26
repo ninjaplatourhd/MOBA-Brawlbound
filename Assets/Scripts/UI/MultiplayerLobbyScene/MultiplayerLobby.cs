@@ -909,4 +909,9 @@ public class MultiplayerLobby : MonoBehaviour
 
         return currentLobby.Data[MapVersionKey].Value;
     }
+
+    public void GoBackToMainMenu()
+    {
+        SceneManager.LoadScene("MainMenu");
+    }
 }

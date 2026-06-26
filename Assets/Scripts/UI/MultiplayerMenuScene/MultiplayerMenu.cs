@@ -280,4 +280,9 @@ public class MultiplayerMenu : MonoBehaviour
 
         return "Player" + Random.Range(1, 1000);
     }
+
+    public void GoBackToMainMenu()
+    {
+        SceneManager.LoadScene("MainMenu");
+    }
 }

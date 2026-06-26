@@ -757,9 +757,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   BuildingId: toranj
   DisplayName: Toranj
-  SightRadius: 45
-  MaxHealth: 350
-  Armor: 10
+  SightRadius: 40
+  MaxHealth: 225
+  Armor: 5
   CanBuildUnits: 0
   BuildableUnits: []
   BuildableUpgrades: []
@@ -854,7 +854,7 @@ MonoBehaviour:
     Name: Tower Cannons
     Damage: 20
     FireRate: 8
-    Range: 50
+    Range: 35
     RotationSpeed: 180
     FiringArc: 15
     MovesGun: 0
