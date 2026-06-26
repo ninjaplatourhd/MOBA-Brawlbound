@@ -518,7 +518,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1288731541
+  GlobalObjectIdHash: 2294652517
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -581,8 +581,35 @@ MonoBehaviour:
     PowerUpkeep: 2
     RequiredTechTier: 1
     BuildTime: 4
+  - UnitId: scout_droid
+    DisplayName: Scout Droid
+    Icon: {fileID: 21300000, guid: e5cc91fb2698758419513d2afdc94e90, type: 3}
+    UnitPrefab: {fileID: 3811819106024151149, guid: d0459018dec41e342829dfd6a245e349, type: 3}
+    MineralCost: 80
+    PowerCost: 3
+    PowerUpkeep: 3
+    RequiredTechTier: 1
+    BuildTime: 5
+  - UnitId: machine_gun_droid
+    DisplayName: Machine Gun Droid
+    Icon: {fileID: 21300000, guid: 6b1b792b43d0d5541a6bab4cc6339541, type: 3}
+    UnitPrefab: {fileID: 6538231128716109562, guid: e574b850ee3e8d54ba29fe2f9eeca626, type: 3}
+    MineralCost: 100
+    PowerCost: 4
+    PowerUpkeep: 4
+    RequiredTechTier: 1
+    BuildTime: 8
+  - UnitId: advanced_combat_droid
+    DisplayName: Advanced Combat Droid
+    Icon: {fileID: 21300000, guid: 48cf33a88cc39a34e90727abe4ccc252, type: 3}
+    UnitPrefab: {fileID: 3106559273076979841, guid: 93641158671e72441ad292c4ead72470, type: 3}
+    MineralCost: 145
+    PowerCost: 6
+    PowerUpkeep: 6
+    RequiredTechTier: 1
+    BuildTime: 9
   BuildableUpgrades: []
-  Icon: {fileID: 21300000, guid: 8a0921528b4ebf643baa34e051253113, type: 3}
+  Icon: {fileID: 21300000, guid: 48cf33a88cc39a34e90727abe4ccc252, type: 3}
 --- !u!114 &4681541898412347155
 MonoBehaviour:
   m_ObjectHideFlags: 0

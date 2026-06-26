@@ -563,8 +563,8 @@ MonoBehaviour:
   BuildingId: komandni_centar
   DisplayName: Komandni Centar
   SightRadius: 60
-  MaxHealth: 1000
-  Armor: 20
+  MaxHealth: 500
+  Armor: 10
   CanBuildUnits: 1
   BuildableUnits:
   - UnitId: worker

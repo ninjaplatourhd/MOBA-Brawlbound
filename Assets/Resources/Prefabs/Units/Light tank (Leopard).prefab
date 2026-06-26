@@ -614,7 +614,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 3301774500
+  GlobalObjectIdHash: 2973486758
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -751,11 +751,15 @@ MonoBehaviour:
   MaxAcceleration: 10
   Weapons:
   - Name: Light Cannon
-    Damage: 15
+    Damage: 25
     FireRate: 3.2
     Range: 30
     RotationSpeed: 160
     FiringArc: 5
+    MovesGun: 1
+    GunPivot: {fileID: 5441640128892152623}
+    WeaponYawOffset: 0
+    Barrels: []
     DamageType: 0
     ProjectileType: 0
     ProjectileName: VelikiMetak6
@@ -779,14 +783,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   fallbackBarrel: {fileID: 4189573925981050543}
-  projectileSpeed: 40
   autoAggroInterval: 0.5
   autoAggroDelayAfterMoveOrder: 1
   autoAggroRangeMultiplier: 1.25
   attackRangeFactor: 0.9
   minimumAttackDistance: 1.5
-  turretYawOffset: 0
-  turretYawSyncThreshold: 0.05
+  weaponYawSyncThreshold: 0.05
   debugCombat: 0
 --- !u!114 &9184462864771279808
 MonoBehaviour:
@@ -801,7 +803,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
-  powerUpkeep: 5
+  powerUpkeep: 6
 --- !u!4 &6682029861601284633 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6d88038570354bc4e9a09800de3e1ddd, type: 3}

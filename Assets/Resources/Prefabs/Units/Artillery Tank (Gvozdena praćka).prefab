@@ -606,7 +606,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1314830029
+  GlobalObjectIdHash: 587260880
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -749,7 +749,11 @@ MonoBehaviour:
     Range: 80
     RotationSpeed: 0
     FiringArc: 15
+    MovesGun: 0
+    GunPivot: {fileID: 0}
     WeaponYawOffset: 0
+    Barrels:
+    - {fileID: 4706218163313266660}
     DamageType: 0
     ProjectileType: 0
     ProjectileName: VelikiMetak12
@@ -773,14 +777,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ShowTopMostFoldoutHeaderGroup: 1
   fallbackBarrel: {fileID: 0}
-  projectileSpeed: 35
   autoAggroInterval: 0.5
   autoAggroDelayAfterMoveOrder: 1
   autoAggroRangeMultiplier: 1.25
   attackRangeFactor: 0.9
   minimumAttackDistance: 1.5
-  turretYawOffset: 0
-  turretYawSyncThreshold: 0.05
+  weaponYawSyncThreshold: 0.05
   debugCombat: 0
 --- !u!114 &809577496292870138
 MonoBehaviour:

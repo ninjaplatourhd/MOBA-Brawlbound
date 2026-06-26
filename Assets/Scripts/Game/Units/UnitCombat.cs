@@ -4,46 +4,44 @@ using UnityEngine;
 
 public class UnitCombat : NetworkBehaviour
 {
+    private class WeaponRuntime
+    {
+        public float NextFireTime;
+        public int NextBarrelIndex;
+        public float BaseLocalX;
+        public float BaseLocalZ;
+    }
+
     [Header("Projectile")]
     [SerializeField] private Transform fallbackBarrel;
-    [SerializeField] private float projectileSpeed = 35f;
 
     [Header("Auto Aggro")]
     [SerializeField] private float autoAggroInterval = 0.5f;
     [SerializeField] private float autoAggroDelayAfterMoveOrder = 1f;
-
     [SerializeField] private float autoAggroRangeMultiplier = 1.25f;
 
     [Header("Attack Movement")]
     [SerializeField] private float attackRangeFactor = 0.9f;
     [SerializeField] private float minimumAttackDistance = 1.5f;
 
-    [Header("Turret Rotation")]
-    [SerializeField] private float turretYawOffset = 0f;
-    [SerializeField] private float turretYawSyncThreshold = 0.05f;
+    [Header("Weapon Rotation Sync")]
+    [SerializeField] private float weaponYawSyncThreshold = 0.05f;
 
     [Header("Debug")]
     [SerializeField] private bool debugCombat = false;
 
+    private Unit unit;
+    private UnitData data;
+    private UnitMovement movement;
+
+    private NetworkObject currentTarget;
     private bool guardMode;
-    private readonly List<float> weaponNextFireTimes = new List<float>();
 
     private float nextAutoAggroTime;
     private float suppressAutoAggroUntil;
 
-    private Unit unit;
-    private UnitData data;
-    private NetworkObject currentTarget;
-    private UnitMovement movement;
-
-    private float gunPivotBaseLocalX;
-    private float gunPivotBaseLocalZ;
-
-    private NetworkVariable<float> syncedGunYaw = new NetworkVariable<float>(
-        0f,
-        NetworkVariableReadPermission.Everyone,
-        NetworkVariableWritePermission.Server
-    );
+    private readonly List<WeaponRuntime> weaponRuntimes = new List<WeaponRuntime>();
+    private NetworkList<float> syncedWeaponYaws;
 
     private void Awake()
     {
@@ -51,61 +49,33 @@ public class UnitCombat : NetworkBehaviour
         data = GetComponent<UnitData>();
         movement = GetComponent<UnitMovement>();
 
-        CacheGunPivotBaseRotation();
+        syncedWeaponYaws = new NetworkList<float>();
     }
 
     public override void OnNetworkSpawn()
     {
-        CacheGunPivotBaseRotation();
+        EnsureWeaponRuntimes();
 
-        if (data != null && data.MovesGun && unit != null && unit.GunPivot != null)
-        {
-            if (IsServer)
-            {
-                syncedGunYaw.Value = unit.GunPivot.localEulerAngles.y;
-            }
-            else
-            {
-                ApplyGunYaw(syncedGunYaw.Value);
-            }
-        }
+        if (IsServer)
+            SyncInitialWeaponYaws();
+        else
+            ApplySyncedWeaponYaws();
+    }
+
+    private void OnDestroy()
+    {
+        if (syncedWeaponYaws != null)
+            syncedWeaponYaws.Dispose();
     }
 
     private void Update()
     {
+        EnsureWeaponRuntimes();
+
         if (IsServer)
-        {
             ServerUpdateAttack();
-        }
         else
-        {
-            ApplySyncedGunRotation();
-        }
-    }
-
-    private void ApplySyncedGunRotation()
-    {
-        if (data == null || !data.MovesGun)
-            return;
-
-        if (unit == null || unit.GunPivot == null)
-            return;
-
-        ApplyGunYaw(syncedGunYaw.Value);
-    }
-
-    public void ServerClearAttackTarget()
-    {
-        if (!IsServer)
-            return;
-
-        currentTarget = null;
-        suppressAutoAggroUntil = Time.time + autoAggroDelayAfterMoveOrder;
-
-        if (movement != null)
-            movement.ServerClearCombatLookTarget();
-
-        DebugCombat("Attack target cleared.");
+            ApplySyncedWeaponYaws();
     }
 
     public void RequestAttack(GameObject targetObject)
@@ -116,40 +86,37 @@ public class UnitCombat : NetworkBehaviour
         if (unit == null)
             unit = GetComponent<Unit>();
 
-        if (unit == null)
+        if (unit == null || !unit.BelongsToLocalPlayer())
             return;
 
-        if (!unit.BelongsToLocalPlayer())
+        NetworkObject targetNetworkObject = targetObject.GetComponent<NetworkObject>();
+
+        if (targetNetworkObject == null)
             return;
 
-        NetworkObject targetNetObj = targetObject.GetComponent<NetworkObject>();
-
-        if (targetNetObj == null)
-            return;
-
-        NetworkObjectReference targetRef = new NetworkObjectReference(targetNetObj);
-
-        SetAttackTargetServerRpc(targetRef);
+        SetAttackTargetServerRpc(new NetworkObjectReference(targetNetworkObject));
     }
 
     [ServerRpc(RequireOwnership = false)]
-    private void SetAttackTargetServerRpc(NetworkObjectReference targetRef, ServerRpcParams rpcParams = default)
+    private void SetAttackTargetServerRpc(
+        NetworkObjectReference targetReference,
+        ServerRpcParams rpcParams = default)
     {
         ulong senderClientId = rpcParams.Receive.SenderClientId;
+
+        if (unit == null)
+            unit = GetComponent<Unit>();
+
+        if (unit == null)
+            return;
 
         if (unit.PlayerClientId.Value != senderClientId)
             return;
 
-        if (!targetRef.TryGet(out NetworkObject targetObject))
+        if (!targetReference.TryGet(out NetworkObject targetObject))
             return;
 
-        IOwnedObject ownedTarget = targetObject.GetComponent<IOwnedObject>();
-        IDamageable damageableTarget = targetObject.GetComponent<IDamageable>();
-
-        if (ownedTarget == null || damageableTarget == null)
-            return;
-
-        if (ownedTarget.OwnerClientId == senderClientId)
+        if (!IsValidEnemyTarget(targetObject, senderClientId))
             return;
 
         if (!ServerCanOwnerSeeTarget(senderClientId, targetObject))
@@ -168,9 +135,22 @@ public class UnitCombat : NetworkBehaviour
         guardMode = false;
         currentTarget = targetObject;
 
-        DebugCombat($"Manual attack target set: {targetObject.name}");
-
         NotifyTargetThatItIsBeingAttacked(targetObject);
+        DebugCombat($"Manual attack target set: {targetObject.name}");
+    }
+
+    public void ServerClearAttackTarget()
+    {
+        if (!IsServer)
+            return;
+
+        currentTarget = null;
+        suppressAutoAggroUntil = Time.time + autoAggroDelayAfterMoveOrder;
+
+        if (movement != null)
+            movement.ServerClearCombatLookTarget();
+
+        DebugCombat("Attack target cleared.");
     }
 
     private void ServerUpdateAttack()
@@ -180,125 +160,262 @@ public class UnitCombat : NetworkBehaviour
 
         bool playerMoveActive = movement != null && movement.IsExecutingPlayerMoveCommand;
 
-
-        if (playerMoveActive && !data.MovesGun)
+        if (playerMoveActive && !HasAnyMovingWeapon())
         {
-            currentTarget = null;
-
-            if (movement != null)
-                movement.ServerClearCombatLookTarget();
-
-            DebugCombat("Skipping combat because non-turret unit is executing player move command.");
+            ClearCurrentTarget();
+            DebugCombat("Skipping combat because unit has no moving weapon while moving.");
             return;
         }
 
         if (currentTarget == null)
-        {
             TryAutoAcquireTarget();
 
-            if (currentTarget == null)
-            {
-                if (movement != null)
-                    movement.ServerClearCombatLookTarget();
-
-                return;
-            }
-        }
-
-        IDamageable damageableTarget = currentTarget.GetComponent<IDamageable>();
-        IOwnedObject ownedTarget = currentTarget.GetComponent<IOwnedObject>();
-
-        if (damageableTarget == null || ownedTarget == null)
+        if (currentTarget == null)
         {
-            DebugCombat("Current target invalid: missing IDamageable or IOwnedObject.");
-            currentTarget = null;
-            return;
-        }
-
-        if (IsTargetInvalidOrDead())
-        {
-            DebugCombat("Current target invalid or dead.");
-            currentTarget = null;
-
             if (movement != null)
                 movement.ServerClearCombatLookTarget();
 
+            return;
+        }
+
+        if (!IsTargetUsable(currentTarget))
+        {
+            ClearCurrentTarget();
+            DebugCombat("Current target invalid or dead.");
             return;
         }
 
         if (!ServerCanOwnerSeeTarget(unit.PlayerClientId.Value, currentTarget))
         {
+            ClearCurrentTarget();
             DebugCombat("Current target lost because it is no longer visible.");
-            currentTarget = null;
-
-            if (movement != null)
-                movement.ServerClearCombatLookTarget();
-
             return;
         }
 
         Vector3 targetPosition = currentTarget.transform.position;
         float distance = Vector3.Distance(transform.position, targetPosition);
-
-        float minWeaponRange = GetMinimumWeaponRange();
         float maxWeaponRange = GetMaximumWeaponRange();
-
-        float desiredAttackRange = Mathf.Max(
-            minimumAttackDistance,
-            minWeaponRange * attackRangeFactor
-        );
-
 
         if (playerMoveActive && distance > maxWeaponRange)
         {
-            currentTarget = null;
-
-            if (movement != null)
-                movement.ServerClearCombatLookTarget();
-
-            DebugCombat("Clearing target because turret unit is moving and target is outside max range.");
+            ClearCurrentTarget();
+            DebugCombat("Clearing target because moving unit target is outside max range.");
             return;
-        }
-
-        if (!guardMode && !playerMoveActive && distance > desiredAttackRange)
-        {
-            if (movement != null)
-                movement.ServerMoveToAttackRange(targetPosition, desiredAttackRange);
         }
 
         if (guardMode && distance > maxWeaponRange)
         {
-            currentTarget = null;
-
-            if (movement != null)
-                movement.ServerClearCombatLookTarget();
-
+            ClearCurrentTarget();
             DebugCombat("Guard mode: target left range.");
             return;
         }
 
+        HandleAttackMovement(targetPosition, distance, playerMoveActive);
+
         if (distance > maxWeaponRange)
             return;
 
-        Transform aimTransform = GetAimTransform();
+        AimWeaponsAtTarget(targetPosition, playerMoveActive);
+        TryFireWeapons(targetPosition, distance, playerMoveActive);
+    }
 
-        Vector3 direction = targetPosition - aimTransform.position;
+    private void HandleAttackMovement(Vector3 targetPosition, float distance, bool playerMoveActive)
+    {
+        if (guardMode || playerMoveActive)
+            return;
+
+        float desiredRange = Mathf.Max(
+            minimumAttackDistance,
+            GetMinimumWeaponRange() * attackRangeFactor
+        );
+
+        if (distance > desiredRange && movement != null)
+            movement.ServerMoveToAttackRange(targetPosition, desiredRange);
+    }
+
+    private void AimWeaponsAtTarget(Vector3 targetPosition, bool playerMoveActive)
+    {
+        bool hasFixedWeapon = false;
+
+        for (int i = 0; i < data.Weapons.Count; i++)
+        {
+            Weapon weapon = data.Weapons[i];
+
+            if (weapon == null)
+                continue;
+
+            if (weapon.MovesGun)
+                AimMovingWeapon(i, weapon, targetPosition);
+            else
+                hasFixedWeapon = true;
+        }
+
+        if (movement == null)
+            return;
+
+        if (hasFixedWeapon && !playerMoveActive)
+            movement.ServerSetCombatLookTarget(targetPosition);
+        else if (!hasFixedWeapon)
+            movement.ServerClearCombatLookTarget();
+    }
+
+    private void AimMovingWeapon(int weaponIndex, Weapon weapon, Vector3 targetPosition)
+    {
+        Transform pivot = GetWeaponPivot(weapon);
+
+        if (pivot == null)
+            return;
+
+        Vector3 direction = targetPosition - pivot.position;
         direction.y = 0f;
 
         if (direction.sqrMagnitude < 0.01f)
             return;
 
-        Vector3 normalizedDirection = direction.normalized;
+        float targetYaw = GetTargetLocalYaw(pivot, direction.normalized, weapon.WeaponYawOffset);
+        float currentYaw = pivot.localEulerAngles.y;
 
-        RotateTowardsTarget(aimTransform, normalizedDirection, targetPosition);
-        TryFireWeapons(distance, aimTransform, normalizedDirection);
+        float newYaw = Mathf.MoveTowardsAngle(
+            currentYaw,
+            targetYaw,
+            weapon.RotationSpeed * Time.deltaTime
+        );
+
+        ApplyWeaponYaw(weaponIndex, weapon, newYaw);
+        SyncWeaponYawIfNeeded(weaponIndex, newYaw);
+    }
+
+    private void TryFireWeapons(Vector3 targetPosition, float distance, bool playerMoveActive)
+    {
+        for (int i = 0; i < data.Weapons.Count; i++)
+        {
+            Weapon weapon = data.Weapons[i];
+
+            if (weapon == null)
+                continue;
+
+            if (playerMoveActive && !weapon.MovesGun)
+                continue;
+
+            if (distance > weapon.Range)
+                continue;
+
+            if (!IsWeaponInFiringArc(weapon, targetPosition))
+                continue;
+
+            WeaponRuntime runtime = weaponRuntimes[i];
+
+            if (Time.time < runtime.NextFireTime)
+                continue;
+
+            runtime.NextFireTime = Time.time + 1f / Mathf.Max(0.01f, weapon.FireRate);
+            FireWeapon(i, weapon);
+        }
+    }
+
+    private bool IsWeaponInFiringArc(Weapon weapon, Vector3 targetPosition)
+    {
+        Vector3 direction = GetDirectionToTarget(weapon, targetPosition);
+
+        if (direction.sqrMagnitude < 0.01f)
+            return false;
+
+        float angle;
+
+        if (weapon.MovesGun)
+        {
+            Transform pivot = GetWeaponPivot(weapon);
+
+            if (pivot == null)
+                return false;
+
+            float targetYaw = GetTargetLocalYaw(pivot, direction.normalized, weapon.WeaponYawOffset);
+            float currentYaw = pivot.localEulerAngles.y;
+
+            angle = Mathf.Abs(Mathf.DeltaAngle(currentYaw, targetYaw));
+        }
+        else
+        {
+            Vector3 forward = transform.forward;
+            forward.y = 0f;
+
+            if (forward.sqrMagnitude < 0.01f)
+                return false;
+
+            Vector3 effectiveForward =
+                Quaternion.Euler(0f, weapon.WeaponYawOffset, 0f) *
+                forward.normalized;
+
+            angle = Vector3.Angle(effectiveForward, direction.normalized);
+        }
+
+        return angle <= weapon.FiringArc;
+    }
+
+    private void FireWeapon(int weaponIndex, Weapon weapon)
+    {
+        if (!IsServer || currentTarget == null)
+            return;
+
+        Transform barrel = GetNextBarrel(weaponIndex, weapon);
+
+        if (barrel == null)
+            return;
+
+        Vector3 aimPoint = currentTarget.transform.position + Vector3.up * 0.5f;
+        Vector3 direction = aimPoint - barrel.position;
+
+        if (direction.sqrMagnitude < 0.01f)
+            return;
+
+        if (ServerProjectileSystem.Instance == null)
+            return;
+
+        ServerProjectileSystem.Instance.ServerFireProjectile(
+            unit,
+            barrel.position,
+            direction.normalized,
+            weapon
+        );
+    }
+
+    private Transform GetNextBarrel(int weaponIndex, Weapon weapon)
+    {
+        WeaponRuntime runtime = weaponRuntimes[weaponIndex];
+
+        Transform barrel = GetNextFromList(weapon.Barrels, runtime);
+
+        if (barrel != null)
+            return barrel;
+
+        if (unit != null)
+            barrel = GetNextFromList(unit.Barrels, runtime);
+
+        if (barrel != null)
+            return barrel;
+
+        return fallbackBarrel;
+    }
+
+    private Transform GetNextFromList(IReadOnlyList<Transform> barrels, WeaponRuntime runtime)
+    {
+        if (barrels == null || barrels.Count == 0)
+            return null;
+
+        for (int i = 0; i < barrels.Count; i++)
+        {
+            int index = runtime.NextBarrelIndex % barrels.Count;
+            runtime.NextBarrelIndex++;
+
+            if (barrels[index] != null)
+                return barrels[index];
+        }
+
+        return null;
     }
 
     private void TryAutoAcquireTarget()
     {
-        if (!IsServer)
-            return;
-
         if (Time.time < suppressAutoAggroUntil)
             return;
 
@@ -307,65 +424,61 @@ public class UnitCombat : NetworkBehaviour
 
         nextAutoAggroTime = Time.time + autoAggroInterval;
 
-        if (data == null || data.Weapons == null || data.Weapons.Count == 0)
-            return;
+        float range = GetAutoAggroRange();
 
-        float autoAggroRange = GetAutoAggroRange();
-
-        if (autoAggroRange <= 0f)
+        if (range <= 0f)
             return;
 
         NetworkObject bestTarget = null;
-        float bestDistanceSqr = autoAggroRange * autoAggroRange;
+        float bestDistanceSqr = range * range;
 
-        if (UnitManager.instance != null)
-        {
-            foreach (GameObject unitObj in UnitManager.instance.AllUnitsList)
-            {
-                TryConsiderAutoAggroTarget(unitObj, ref bestTarget, ref bestDistanceSqr);
-            }
-        }
+        FindBestTargetInUnits(ref bestTarget, ref bestDistanceSqr);
+        FindBestTargetInBuildings(ref bestTarget, ref bestDistanceSqr);
 
-        if (BuildingManager.instance != null)
-        {
-            foreach (GameObject buildingObj in BuildingManager.instance.AllBuildingsList)
-            {
-                TryConsiderAutoAggroTarget(buildingObj, ref bestTarget, ref bestDistanceSqr);
-            }
-        }
+        if (bestTarget == null)
+            return;
 
-        if (bestTarget != null)
-        {
-            currentTarget = bestTarget;
+        currentTarget = bestTarget;
+        NotifyTargetThatItIsBeingAttacked(bestTarget);
 
-            DebugCombat($"Auto-acquired target: {bestTarget.name}");
+        DebugCombat($"Auto-acquired target: {bestTarget.name}");
+    }
 
-            NotifyTargetThatItIsBeingAttacked(bestTarget);
-        }
+    private void FindBestTargetInUnits(ref NetworkObject bestTarget, ref float bestDistanceSqr)
+    {
+        if (UnitManager.instance == null)
+            return;
+
+        foreach (GameObject unitObject in UnitManager.instance.AllUnitsList)
+            TryConsiderAutoAggroTarget(unitObject, ref bestTarget, ref bestDistanceSqr);
+    }
+
+    private void FindBestTargetInBuildings(ref NetworkObject bestTarget, ref float bestDistanceSqr)
+    {
+        if (BuildingManager.instance == null)
+            return;
+
+        foreach (GameObject buildingObject in BuildingManager.instance.AllBuildingsList)
+            TryConsiderAutoAggroTarget(buildingObject, ref bestTarget, ref bestDistanceSqr);
     }
 
     private void TryConsiderAutoAggroTarget(
-      GameObject targetObj,
-      ref NetworkObject bestTarget,
-      ref float bestDistanceSqr)
+        GameObject targetObject,
+        ref NetworkObject bestTarget,
+        ref float bestDistanceSqr)
     {
-        if (targetObj == null || targetObj == gameObject)
+        if (targetObject == null || targetObject == gameObject)
             return;
 
-        NetworkObject targetNetworkObject = targetObj.GetComponent<NetworkObject>();
-        IOwnedObject ownedTarget = targetObj.GetComponent<IOwnedObject>();
-        IDamageable damageableTarget = targetObj.GetComponent<IDamageable>();
+        NetworkObject targetNetworkObject = targetObject.GetComponent<NetworkObject>();
 
-        if (targetNetworkObject == null || ownedTarget == null || damageableTarget == null)
+        if (!IsValidEnemyTarget(targetNetworkObject, unit.PlayerClientId.Value))
             return;
 
-        if (ownedTarget.OwnerClientId == unit.PlayerClientId.Value)
+        if (!IsTargetUsable(targetNetworkObject))
             return;
 
-        if (IsTargetDead(targetNetworkObject))
-            return;
-
-        float distanceSqr = (targetObj.transform.position - transform.position).sqrMagnitude;
+        float distanceSqr = (targetObject.transform.position - transform.position).sqrMagnitude;
 
         if (distanceSqr > bestDistanceSqr)
             return;
@@ -377,15 +490,57 @@ public class UnitCombat : NetworkBehaviour
         bestTarget = targetNetworkObject;
     }
 
+    private bool IsValidEnemyTarget(NetworkObject targetObject, ulong ownerClientId)
+    {
+        if (targetObject == null)
+            return false;
+
+        IOwnedObject ownedTarget = targetObject.GetComponent<IOwnedObject>();
+        IDamageable damageableTarget = targetObject.GetComponent<IDamageable>();
+
+        if (ownedTarget == null || damageableTarget == null)
+            return false;
+
+        return ownedTarget.OwnerClientId != ownerClientId;
+    }
+
+    private bool IsTargetUsable(NetworkObject targetObject)
+    {
+        if (targetObject == null || !targetObject.IsSpawned)
+            return false;
+
+        return !IsTargetDead(targetObject);
+    }
+
+    private bool IsTargetDead(NetworkObject targetObject)
+    {
+        if (targetObject == null)
+            return true;
+
+        Unit targetUnit = targetObject.GetComponent<Unit>();
+
+        if (targetUnit != null)
+            return targetUnit.Health.Value <= 0f;
+
+        Building targetBuilding = targetObject.GetComponent<Building>();
+
+        if (targetBuilding != null)
+            return targetBuilding.Health.Value <= 0f;
+
+        return true;
+    }
+
+    private void ClearCurrentTarget()
+    {
+        currentTarget = null;
+
+        if (movement != null)
+            movement.ServerClearCombatLookTarget();
+    }
+
     private void NotifyTargetThatItIsBeingAttacked(NetworkObject targetObject)
     {
-        if (!IsServer)
-            return;
-
-        if (targetObject == null)
-            return;
-
-        if (unit == null)
+        if (!IsServer || targetObject == null || unit == null)
             return;
 
         Unit targetUnit = targetObject.GetComponent<Unit>();
@@ -413,10 +568,7 @@ public class UnitCombat : NetworkBehaviour
 
     public void ServerAggroOn(Unit attacker)
     {
-        if (!IsServer)
-            return;
-
-        if (attacker == null)
+        if (!IsServer || attacker == null)
             return;
 
         if (unit == null)
@@ -428,7 +580,7 @@ public class UnitCombat : NetworkBehaviour
         if (attacker.PlayerClientId.Value == unit.PlayerClientId.Value)
             return;
 
-        if (currentTarget != null && !IsTargetInvalidOrDead())
+        if (currentTarget != null && IsTargetUsable(currentTarget))
         {
             DebugCombat($"Ignored aggro from {attacker.name} because current target is still valid.");
             return;
@@ -449,93 +601,12 @@ public class UnitCombat : NetworkBehaviour
         DebugCombat($"Aggroed on attacker: {attacker.name}");
     }
 
-    private Transform GetBarrel()
-    {
-        if (unit != null && unit.Barrels != null && unit.Barrels.Count > 0)
-        {
-            return unit.Barrels[0];
-        }
-
-        if (fallbackBarrel != null)
-            return fallbackBarrel;
-
-        Debug.LogError($"{gameObject.name} nema nijedan barrel podešen u Unit komponenti.");
-        return null;
-    }
-
-    private Transform GetAimTransform()
-    {
-        if (data != null && data.MovesGun && unit != null && unit.GunPivot != null)
-        {
-            return unit.GunPivot;
-        }
-
-        return transform;
-    }
-
-    private void FireProjectile(NetworkObject targetObject, Weapon weapon)
-    {
-        if (!IsServer)
-            return;
-
-        if (targetObject == null)
-            return;
-
-        Transform barrel = GetBarrel();
-
-        if (barrel == null)
-            return;
-
-        Vector3 aimPoint = targetObject.transform.position + Vector3.up * 0.5f;
-        Vector3 direction = aimPoint - barrel.position;
-
-        if (direction.sqrMagnitude < 0.01f)
-            return;
-
-        ServerProjectileSystem.Instance.ServerFireProjectile(
-            unit,
-            barrel.position,
-            direction.normalized,
-            weapon
-        );
-    }
-
-    private bool IsTargetInvalidOrDead()
-    {
-        if (currentTarget == null)
-            return true;
-
-        if (!currentTarget.IsSpawned)
-            return true;
-
-        return IsTargetDead(currentTarget);
-    }
-
-    private bool IsTargetDead(NetworkObject target)
-    {
-        if (target == null)
-            return true;
-
-        Unit targetUnit = target.GetComponent<Unit>();
-        if (targetUnit != null)
-            return targetUnit.Health.Value <= 0f;
-
-        Building targetBuilding = target.GetComponent<Building>();
-        if (targetBuilding != null)
-            return targetBuilding.Health.Value <= 0f;
-
-        return true;
-    }
-
     public void RequestGuard()
     {
         if (unit == null)
             unit = GetComponent<Unit>();
 
-        if (unit == null)
-            return;
-
-        if (!unit.BelongsToLocalPlayer())
+        if (unit == null || !unit.BelongsToLocalPlayer())
             return;
 
         SetGuardServerRpc();
@@ -559,20 +630,20 @@ public class UnitCombat : NetworkBehaviour
 
         guardMode = enabled;
 
-        if (guardMode)
+        if (!guardMode)
+            return;
+
+        currentTarget = null;
+        suppressAutoAggroUntil = 0f;
+
+        if (movement != null)
         {
-            currentTarget = null;
-            suppressAutoAggroUntil = 0f;
-
-            if (movement != null)
-            {
-                movement.ServerClearPatrol();
-                movement.ServerClearCombatLookTarget();
-                movement.ServerStopMovementOnly();
-            }
-
-            DebugCombat("Guard mode enabled.");
+            movement.ServerClearPatrol();
+            movement.ServerClearCombatLookTarget();
+            movement.ServerStopMovementOnly();
         }
+
+        DebugCombat("Guard mode enabled.");
     }
 
     public void ServerClearGuardMode()
@@ -583,47 +654,126 @@ public class UnitCombat : NetworkBehaviour
         guardMode = false;
     }
 
-    private void RotateTowardsTarget(Transform aimTransform, Vector3 normalizedDirection, Vector3 targetPosition)
+    private void EnsureWeaponRuntimes()
     {
-        float rotationSpeed = GetRotationSpeedForAiming();
-        float yawOffset = GetPrimaryWeaponYawOffset();
+        if (unit == null)
+            unit = GetComponent<Unit>();
 
-        if (data.MovesGun)
-        {
-            RotateGunYawOnly(aimTransform, normalizedDirection, rotationSpeed, yawOffset);
-        }
-        else
-        {
-            if (movement != null && !movement.IsExecutingPlayerMoveCommand)
-                movement.ServerSetCombatLookTarget(targetPosition);
-        }
-    }
+        if (data == null)
+            data = GetComponent<UnitData>();
 
-    private void RotateGunYawOnly(Transform gunPivot, Vector3 worldDirection, float rotationSpeed, float weaponYawOffset)
-    {
-        if (gunPivot == null)
+        if (data == null || data.Weapons == null)
             return;
 
-        float targetYaw = GetTargetLocalYaw(gunPivot, worldDirection, weaponYawOffset);
-        float currentYaw = gunPivot.localEulerAngles.y;
+        MatchRuntimeCount();
 
-        float newYaw = Mathf.MoveTowardsAngle(
-            currentYaw,
-            targetYaw,
-            rotationSpeed * Time.deltaTime
-        );
+        for (int i = 0; i < data.Weapons.Count; i++)
+            CacheWeaponBaseRotation(i);
 
-        ApplyGunYaw(newYaw);
+        if (IsServer)
+            MatchSyncedYawCount();
+    }
 
-        if (IsServer && Mathf.Abs(Mathf.DeltaAngle(syncedGunYaw.Value, newYaw)) > turretYawSyncThreshold)
+    private void MatchRuntimeCount()
+    {
+        while (weaponRuntimes.Count < data.Weapons.Count)
+            weaponRuntimes.Add(new WeaponRuntime());
+
+        while (weaponRuntimes.Count > data.Weapons.Count)
+            weaponRuntimes.RemoveAt(weaponRuntimes.Count - 1);
+    }
+
+    private void MatchSyncedYawCount()
+    {
+        while (syncedWeaponYaws.Count < data.Weapons.Count)
+            syncedWeaponYaws.Add(GetCurrentWeaponYaw(syncedWeaponYaws.Count));
+
+        while (syncedWeaponYaws.Count > data.Weapons.Count)
+            syncedWeaponYaws.RemoveAt(syncedWeaponYaws.Count - 1);
+    }
+
+    private void CacheWeaponBaseRotation(int weaponIndex)
+    {
+        Weapon weapon = data.Weapons[weaponIndex];
+        Transform pivot = GetWeaponPivot(weapon);
+
+        if (pivot == null)
+            return;
+
+        weaponRuntimes[weaponIndex].BaseLocalX = pivot.localEulerAngles.x;
+        weaponRuntimes[weaponIndex].BaseLocalZ = pivot.localEulerAngles.z;
+    }
+
+    private void SyncInitialWeaponYaws()
+    {
+        if (data == null || data.Weapons == null)
+            return;
+
+        MatchSyncedYawCount();
+
+        for (int i = 0; i < data.Weapons.Count; i++)
+            syncedWeaponYaws[i] = GetCurrentWeaponYaw(i);
+    }
+
+    private void SyncWeaponYawIfNeeded(int weaponIndex, float newYaw)
+    {
+        if (!IsServer)
+            return;
+
+        if (weaponIndex < 0 || weaponIndex >= syncedWeaponYaws.Count)
+            return;
+
+        float oldYaw = syncedWeaponYaws[weaponIndex];
+
+        if (Mathf.Abs(Mathf.DeltaAngle(oldYaw, newYaw)) <= weaponYawSyncThreshold)
+            return;
+
+        syncedWeaponYaws[weaponIndex] = newYaw;
+    }
+
+    private void ApplySyncedWeaponYaws()
+    {
+        if (data == null || data.Weapons == null)
+            return;
+
+        int count = Mathf.Min(data.Weapons.Count, syncedWeaponYaws.Count);
+
+        for (int i = 0; i < count; i++)
         {
-            syncedGunYaw.Value = newYaw;
+            Weapon weapon = data.Weapons[i];
+
+            if (weapon == null || !weapon.MovesGun)
+                continue;
+
+            ApplyWeaponYaw(i, weapon, syncedWeaponYaws[i]);
         }
     }
 
-    private float GetTargetLocalYaw(Transform gunPivot, Vector3 worldDirection, float weaponYawOffset)
+    private Transform GetWeaponPivot(Weapon weapon)
     {
-        Transform parent = gunPivot.parent;
+        if (weapon == null || !weapon.MovesGun)
+            return null;
+
+        if (weapon.GunPivot != null)
+            return weapon.GunPivot;
+
+        return unit != null ? unit.GunPivot : null;
+    }
+
+    private Vector3 GetDirectionToTarget(Weapon weapon, Vector3 targetPosition)
+    {
+        Transform pivot = GetWeaponPivot(weapon);
+        Vector3 origin = pivot != null ? pivot.position : transform.position;
+
+        Vector3 direction = targetPosition - origin;
+        direction.y = 0f;
+
+        return direction;
+    }
+
+    private float GetTargetLocalYaw(Transform pivot, Vector3 worldDirection, float weaponYawOffset)
+    {
+        Transform parent = pivot.parent;
 
         Vector3 localDirection = parent != null
             ? parent.InverseTransformDirection(worldDirection)
@@ -632,114 +782,69 @@ public class UnitCombat : NetworkBehaviour
         localDirection.y = 0f;
 
         if (localDirection.sqrMagnitude < 0.01f)
-            return gunPivot.localEulerAngles.y;
+            return pivot.localEulerAngles.y;
 
-        float targetYaw = Mathf.Atan2(localDirection.x, localDirection.z) * Mathf.Rad2Deg;
-        targetYaw += turretYawOffset;
-        targetYaw += weaponYawOffset;
-
-        return targetYaw;
+        return Mathf.Atan2(localDirection.x, localDirection.z) * Mathf.Rad2Deg
+               + weaponYawOffset;
     }
 
-    private void ApplyGunYaw(float yaw)
+    private void ApplyWeaponYaw(int weaponIndex, Weapon weapon, float yaw)
     {
-        if (unit == null || unit.GunPivot == null)
+        Transform pivot = GetWeaponPivot(weapon);
+
+        if (pivot == null)
             return;
 
-        unit.GunPivot.localRotation = Quaternion.Euler(
-            gunPivotBaseLocalX,
+        if (weaponIndex < 0 || weaponIndex >= weaponRuntimes.Count)
+            return;
+
+        WeaponRuntime runtime = weaponRuntimes[weaponIndex];
+
+        pivot.localRotation = Quaternion.Euler(
+            runtime.BaseLocalX,
             yaw,
-            gunPivotBaseLocalZ
+            runtime.BaseLocalZ
         );
     }
 
-    private void CacheGunPivotBaseRotation()
+    private float GetCurrentWeaponYaw(int weaponIndex)
     {
-        if (unit == null)
-            unit = GetComponent<Unit>();
+        if (data == null || data.Weapons == null)
+            return 0f;
 
-        if (unit == null || unit.GunPivot == null)
-            return;
+        if (weaponIndex < 0 || weaponIndex >= data.Weapons.Count)
+            return 0f;
 
-        Vector3 localEuler = unit.GunPivot.localEulerAngles;
+        Transform pivot = GetWeaponPivot(data.Weapons[weaponIndex]);
 
-        gunPivotBaseLocalX = localEuler.x;
-        gunPivotBaseLocalZ = localEuler.z;
+        if (pivot == null)
+            return 0f;
+
+        return pivot.localEulerAngles.y;
     }
 
-    private void TryFireWeapons(float distance, Transform aimTransform, Vector3 normalizedDirection)
+    private bool HasAnyMovingWeapon()
     {
-        EnsureWeaponCooldownList();
+        if (data == null || data.Weapons == null)
+            return false;
 
-        for (int i = 0; i < data.Weapons.Count; i++)
+        foreach (Weapon weapon in data.Weapons)
         {
-            Weapon weapon = data.Weapons[i];
-
-            if (weapon == null)
-                continue;
-
-            if (distance > weapon.Range)
-                continue;
-
-            float angle = GetAimAngleToTarget(aimTransform, normalizedDirection, weapon);
-
-            if (angle > weapon.FiringArc)
-                continue;
-
-            if (Time.time < weaponNextFireTimes[i])
-                continue;
-
-            float fireRate = Mathf.Max(0.01f, weapon.FireRate);
-            weaponNextFireTimes[i] = Time.time + 1f / fireRate;
-
-            FireProjectile(currentTarget, weapon);
-        }
-    }
-
-    private float GetAimAngleToTarget(Transform aimTransform, Vector3 normalizedDirection, Weapon weapon)
-    {
-        float weaponYawOffset = weapon != null ? weapon.WeaponYawOffset : 0f;
-
-        if (data != null && data.MovesGun && unit != null && unit.GunPivot != null)
-        {
-            float targetYaw = GetTargetLocalYaw(unit.GunPivot, normalizedDirection, weaponYawOffset);
-            float currentYaw = unit.GunPivot.localEulerAngles.y;
-
-            return Mathf.Abs(Mathf.DeltaAngle(currentYaw, targetYaw));
+            if (weapon != null && weapon.MovesGun)
+                return true;
         }
 
-        Vector3 forward = aimTransform.forward;
-        forward.y = 0f;
-
-        if (forward.sqrMagnitude < 0.01f)
-            return 999f;
-
-        Vector3 effectiveForward = Quaternion.Euler(0f, weaponYawOffset, 0f) * forward.normalized;
-
-        return Vector3.Angle(effectiveForward, normalizedDirection);
-    }
-
-    private void EnsureWeaponCooldownList()
-    {
-        while (weaponNextFireTimes.Count < data.Weapons.Count)
-        {
-            weaponNextFireTimes.Add(0f);
-        }
-
-        while (weaponNextFireTimes.Count > data.Weapons.Count)
-        {
-            weaponNextFireTimes.RemoveAt(weaponNextFireTimes.Count - 1);
-        }
+        return false;
     }
 
     private float GetAutoAggroRange()
     {
-        float maxWeaponRange = GetMaximumWeaponRange();
+        float maxRange = GetMaximumWeaponRange();
 
-        if (maxWeaponRange <= 0f)
+        if (maxRange <= 0f)
             return 0f;
 
-        return maxWeaponRange * autoAggroRangeMultiplier;
+        return maxRange * autoAggroRangeMultiplier;
     }
 
     private float GetMinimumWeaponRange()
@@ -757,10 +862,7 @@ public class UnitCombat : NetworkBehaviour
             minRange = Mathf.Min(minRange, weapon.Range);
         }
 
-        if (minRange == float.MaxValue)
-            return 0f;
-
-        return minRange;
+        return minRange == float.MaxValue ? 0f : minRange;
     }
 
     private float GetMaximumWeaponRange()
@@ -781,25 +883,104 @@ public class UnitCombat : NetworkBehaviour
         return maxRange;
     }
 
-    private float GetRotationSpeedForAiming()
+    private bool ServerCanOwnerSeeTarget(ulong ownerClientId, NetworkObject targetObject)
     {
-        if (data == null || data.Weapons == null || data.Weapons.Count == 0)
-            return 120f;
+        if (!IsServer || targetObject == null || !targetObject.IsSpawned)
+            return false;
 
-        float slowestRotationSpeed = float.MaxValue;
+        Collider targetCollider = targetObject.GetComponent<Collider>();
+        Vector3 targetPosition = targetObject.transform.position;
 
-        foreach (Weapon weapon in data.Weapons)
+        return CanAnyFriendlyUnitSeeTarget(ownerClientId, targetCollider, targetPosition) ||
+               CanAnyFriendlyBuildingSeeTarget(ownerClientId, targetCollider, targetPosition);
+    }
+
+    private bool CanAnyFriendlyUnitSeeTarget(
+        ulong ownerClientId,
+        Collider targetCollider,
+        Vector3 targetPosition)
+    {
+        if (UnitManager.instance == null)
+            return false;
+
+        foreach (GameObject unitObject in UnitManager.instance.AllUnitsList)
         {
-            if (weapon == null)
+            Unit friendlyUnit = unitObject != null ? unitObject.GetComponent<Unit>() : null;
+
+            if (friendlyUnit == null)
                 continue;
 
-            slowestRotationSpeed = Mathf.Min(slowestRotationSpeed, weapon.RotationSpeed);
+            if (friendlyUnit.PlayerClientId.Value != ownerClientId)
+                continue;
+
+            if (friendlyUnit.Health.Value <= 0f)
+                continue;
+
+            UnitData friendlyData = friendlyUnit.Data;
+
+            if (friendlyData == null)
+                friendlyData = friendlyUnit.GetComponent<UnitData>();
+
+            if (friendlyData == null || friendlyData.SightRadius <= 0f)
+                continue;
+
+            Vector3 closestPoint = targetCollider != null
+                ? targetCollider.ClosestPoint(friendlyUnit.transform.position)
+                : targetPosition;
+
+            float distanceSqr = (closestPoint - friendlyUnit.transform.position).sqrMagnitude;
+            float sightSqr = friendlyData.SightRadius * friendlyData.SightRadius;
+
+            if (distanceSqr <= sightSqr)
+                return true;
         }
 
-        if (slowestRotationSpeed == float.MaxValue)
-            return 120f;
+        return false;
+    }
 
-        return slowestRotationSpeed;
+    private bool CanAnyFriendlyBuildingSeeTarget(
+        ulong ownerClientId,
+        Collider targetCollider,
+        Vector3 targetPosition)
+    {
+        if (BuildingManager.instance == null)
+            return false;
+
+        foreach (GameObject buildingObject in BuildingManager.instance.AllBuildingsList)
+        {
+            Building friendlyBuilding = buildingObject != null
+                ? buildingObject.GetComponent<Building>()
+                : null;
+
+            if (friendlyBuilding == null)
+                continue;
+
+            if (friendlyBuilding.PlayerClientId.Value != ownerClientId)
+                continue;
+
+            if (friendlyBuilding.Health.Value <= 0f)
+                continue;
+
+            BuildingData friendlyData = friendlyBuilding.Data;
+
+            if (friendlyData == null)
+                friendlyData = friendlyBuilding.GetComponent<BuildingData>();
+
+            if (friendlyData == null || friendlyData.SightRadius <= 0f)
+                continue;
+
+            Vector3 closestPoint = targetCollider != null
+                ? targetCollider.ClosestPoint(friendlyBuilding.transform.position)
+                : targetPosition;
+
+            float distanceSqr = (closestPoint - friendlyBuilding.transform.position).sqrMagnitude;
+            float sightSqr = friendlyData.SightRadius * friendlyData.SightRadius;
+
+            if (distanceSqr <= sightSqr)
+                return true;
+        }
+
+        return false;
     }
 
     private void DebugCombat(string message)
@@ -808,114 +989,5 @@ public class UnitCombat : NetworkBehaviour
             return;
 
         Debug.Log($"[{gameObject.name}] {message}");
-    }
-
-    private float GetPrimaryWeaponYawOffset()
-    {
-        if (data == null || data.Weapons == null || data.Weapons.Count == 0)
-            return 0f;
-
-        Weapon weapon = data.Weapons[0];
-
-        if (weapon == null)
-            return 0f;
-
-        return weapon.WeaponYawOffset;
-    }
-
-    private bool ServerCanOwnerSeeTarget(ulong ownerClientId, NetworkObject targetNetworkObject)
-    {
-        if (!IsServer)
-            return false;
-
-        if (targetNetworkObject == null || !targetNetworkObject.IsSpawned)
-            return false;
-
-        Collider targetCollider = targetNetworkObject.GetComponent<Collider>();
-        Vector3 targetPosition = targetNetworkObject.transform.position;
-
-        if (UnitManager.instance != null)
-        {
-            foreach (GameObject unitObj in UnitManager.instance.AllUnitsList)
-            {
-                if (unitObj == null)
-                    continue;
-
-                Unit friendlyUnit = unitObj.GetComponent<Unit>();
-
-                if (friendlyUnit == null)
-                    continue;
-
-                if (friendlyUnit.PlayerClientId.Value != ownerClientId)
-                    continue;
-
-                if (friendlyUnit.Health.Value <= 0f)
-                    continue;
-
-                UnitData friendlyData = friendlyUnit.Data;
-
-                if (friendlyData == null)
-                    friendlyData = friendlyUnit.GetComponent<UnitData>();
-
-                if (friendlyData == null)
-                    continue;
-
-                if (friendlyData.SightRadius <= 0f)
-                    continue;
-
-                Vector3 closestTargetPoint = targetCollider != null
-                    ? targetCollider.ClosestPoint(friendlyUnit.transform.position)
-                    : targetPosition;
-
-                float distanceSqr = (closestTargetPoint - friendlyUnit.transform.position).sqrMagnitude;
-                float sightSqr = friendlyData.SightRadius * friendlyData.SightRadius;
-
-                if (distanceSqr <= sightSqr)
-                    return true;
-            }
-        }
-
-        if (BuildingManager.instance != null)
-        {
-            foreach (GameObject buildingObj in BuildingManager.instance.AllBuildingsList)
-            {
-                if (buildingObj == null)
-                    continue;
-
-                Building friendlyBuilding = buildingObj.GetComponent<Building>();
-
-                if (friendlyBuilding == null)
-                    continue;
-
-                if (friendlyBuilding.PlayerClientId.Value != ownerClientId)
-                    continue;
-
-                if (friendlyBuilding.Health.Value <= 0f)
-                    continue;
-
-                BuildingData friendlyData = friendlyBuilding.Data;
-
-                if (friendlyData == null)
-                    friendlyData = friendlyBuilding.GetComponent<BuildingData>();
-
-                if (friendlyData == null)
-                    continue;
-
-                if (friendlyData.SightRadius <= 0f)
-                    continue;
-
-                Vector3 closestTargetPoint = targetCollider != null
-                    ? targetCollider.ClosestPoint(friendlyBuilding.transform.position)
-                    : targetPosition;
-
-                float distanceSqr = (closestTargetPoint - friendlyBuilding.transform.position).sqrMagnitude;
-                float sightSqr = friendlyData.SightRadius * friendlyData.SightRadius;
-
-                if (distanceSqr <= sightSqr)
-                    return true;
-            }
-        }
-
-        return false;
     }
 }
