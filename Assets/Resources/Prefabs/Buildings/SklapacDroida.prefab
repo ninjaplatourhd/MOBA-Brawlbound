@@ -609,7 +609,7 @@ MonoBehaviour:
     RequiredTechTier: 2
     BuildTime: 9
   BuildableUpgrades: []
-  Icon: {fileID: 21300000, guid: 48cf33a88cc39a34e90727abe4ccc252, type: 3}
+  Icon: {fileID: 21300000, guid: 8a0921528b4ebf643baa34e051253113, type: 3}
 --- !u!114 &4681541898412347155
 MonoBehaviour:
   m_ObjectHideFlags: 0
