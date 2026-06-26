@@ -28,7 +28,7 @@ public class PlayerNetwork : NetworkBehaviour
         }
 
 
-
+        /*
         if (Input.GetMouseButtonDown(1))
         {
             Ray ray = mainCamera.ScreenPointToRay(Input.mousePosition);
@@ -56,6 +56,6 @@ public class PlayerNetwork : NetworkBehaviour
             {
                 isMoving = false;
             }
-        }
+        }*/
     }
 }
