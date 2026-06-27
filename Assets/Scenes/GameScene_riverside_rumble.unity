@@ -397,7 +397,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 1531792225314482530, guid: f3c5f2119832dde4c80d187f1007120a, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -2064,7 +2064,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.11764706, g: 0.22745098, b: 0.37254903, a: 0}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -4312,7 +4312,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.11764706, g: 0.22745098, b: 0.37254903, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -5271,7 +5271,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -6473,7 +6473,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -8188,7 +8188,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: -63158895043841781, guid: c5c4827fe96dcf04cad308c2fcdb453f, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -14384,21 +14384,15 @@ MonoBehaviour:
   iconContainer: {fileID: 284450508}
   unitIconPrefab: {fileID: 8664543933202541090, guid: 1614536653eb2b74eab4be5d4985139e, type: 3}
   buildingIconPrefab: {fileID: 5771978480736923661, guid: 96027be288064444381bf3ec9d9ae57f, type: 3}
+  mineralIconPrefab: {fileID: 5771978480736923661, guid: 96027be288064444381bf3ec9d9ae57f, type: 3}
   refreshInterval: 0.05
-  playerColors:
-  - ClientId: 0
-    Color: {r: 0.5377358, g: 0.053266283, b: 0.053266283, a: 1}
-  - ClientId: 1
-    Color: {r: 0.11160557, g: 0.26839355, b: 0.7169812, a: 1}
-  - ClientId: 2
-    Color: {r: 0.10814536, g: 0.8679245, b: 0.09416164, a: 1}
-  - ClientId: 3
-    Color: {r: 0.8018868, g: 0.68503857, b: 0.07186719, a: 1}
-  fallbackColorA: {r: 0, g: 1, b: 1, a: 1}
-  fallbackColorB: {r: 1, g: 0, b: 0, a: 1}
-  fallbackColorC: {r: 0, g: 1, b: 0, a: 1}
-  fallbackColorD: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  mineralSearchInterval: 1
+  mineralColor: {r: 0.17661978, g: 0.22669114, b: 0.5943396, a: 1}
+  showMineralsThroughFog: 0
   knownBuildingAlpha: 0.45
+  unitIconSize: {x: 8, y: 8}
+  buildingIconSize: {x: 10, y: 10}
+  mineralIconSize: {x: 7, y: 7}
 --- !u!114 &1332696144
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16779,7 +16773,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: e8bdd5fadbeb5a547b37bfbfe0c30d4b, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 170cd9c97e064a245ab20b8732af65a9, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -20097,7 +20091,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.11764706, g: 0.22745098, b: 0.37254903, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -20965,7 +20959,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -21615,7 +21609,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 0.11764706, g: 0.22745098, b: 0.37254903, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -22330,7 +22324,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: -3819114091057068876, guid: 46810f5b8c312f742a1c90332edcd1a5, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:

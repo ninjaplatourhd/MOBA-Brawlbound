@@ -2472,7 +2472,7 @@ MonoBehaviour:
   mapOptions:
   - DisplayName: Riverside Rumble
     SceneName: GameScene_riverside_rumble
-    PreviewImage: {fileID: 21300000, guid: e8bdd5fadbeb5a547b37bfbfe0c30d4b, type: 3}
+    PreviewImage: {fileID: 21300000, guid: 170cd9c97e064a245ab20b8732af65a9, type: 3}
     MaxNumOfPlayers: 2
   gameStartButton: {fileID: 1789258382}
   minPlayersToStart: 1

@@ -13,12 +13,13 @@ public class MinimapIconUI : MonoBehaviour
 
         if (iconImage == null)
             iconImage = GetComponent<Image>();
+
+        if (iconImage != null)
+            iconImage.raycastTarget = false;
     }
 
     public void SetColor(Color color)
     {
-        color.a = 1f;
-
         if (iconImage != null)
             iconImage.color = color;
     }
