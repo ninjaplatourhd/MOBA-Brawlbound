@@ -10,7 +10,37 @@ public class BuildingProductionCommandUI : MonoBehaviour
     [Header("Prefab")]
     [SerializeField] private ProductionButtonUI productionButtonPrefab;
 
+    [Header("Auto Refresh")]
+    [SerializeField] private float autoRefreshInterval = 1f;
+
     private GameObject currentSelectedBuilding;
+    private float autoRefreshTimer;
+
+    private void OnEnable()
+    {
+        ForceRefresh();
+    }
+
+    private void Update()
+    {
+        GameObject selectedBuilding = GetSelectedBuilding();
+
+        if (selectedBuilding != currentSelectedBuilding)
+        {
+            RefreshFromSelection();
+            autoRefreshTimer = 0f;
+            return;
+        }
+
+        autoRefreshTimer += Time.unscaledDeltaTime;
+
+        if (autoRefreshTimer < autoRefreshInterval)
+            return;
+
+        autoRefreshTimer = 0f;
+
+        ForceRefresh();
+    }
 
     public void RefreshFromSelection()
     {
@@ -25,6 +55,30 @@ public class BuildingProductionCommandUI : MonoBehaviour
         if (selectedBuilding == currentSelectedBuilding)
             return;
 
+        RebuildForBuilding(selectedBuilding);
+    }
+
+    public void ForceRefresh()
+    {
+        GameObject selectedBuilding = GetSelectedBuilding();
+
+        if (selectedBuilding == null)
+        {
+            Clear();
+            return;
+        }
+
+        RebuildForBuilding(selectedBuilding);
+    }
+
+    public void Clear()
+    {
+        currentSelectedBuilding = null;
+        ClearContainersOnly();
+    }
+
+    private void RebuildForBuilding(GameObject selectedBuilding)
+    {
         currentSelectedBuilding = selectedBuilding;
 
         ClearContainersOnly();
@@ -57,18 +111,6 @@ public class BuildingProductionCommandUI : MonoBehaviour
         }
     }
 
-    public void ForceRefresh()
-    {
-        currentSelectedBuilding = null;
-        RefreshFromSelection();
-    }
-
-    public void Clear()
-    {
-        currentSelectedBuilding = null;
-        ClearContainersOnly();
-    }
-
     private GameObject GetSelectedBuilding()
     {
         if (BuildingManager.instance == null)
@@ -92,8 +134,7 @@ public class BuildingProductionCommandUI : MonoBehaviour
             return;
 
         for (int i = container.childCount - 1; i >= 0; i--)
-        {
             Destroy(container.GetChild(i).gameObject);
-        }
     }
+
 }
