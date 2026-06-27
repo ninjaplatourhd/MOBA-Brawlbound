@@ -576,7 +576,7 @@ MonoBehaviour:
     DisplayName: Light tank
     Icon: {fileID: 21300000, guid: e96a17066fd35014daa31cd5514d1c1e, type: 3}
     UnitPrefab: {fileID: 6336712478654482595, guid: 08f136bf7077dcc49a24cc3ccded778b, type: 3}
-    MineralCost: 50
+    MineralCost: 80
     PowerCost: 10
     PowerUpkeep: 1
     RequiredTechTier: 2

@@ -15266,6 +15266,7 @@ MonoBehaviour:
   unitButtonContainer: {fileID: 1851907988}
   upgradeButtonContainer: {fileID: 158621312}
   productionButtonPrefab: {fileID: -8090959321347901297, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
+  autoRefreshInterval: 1
 --- !u!114 &1426737746
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16582,6 +16583,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   buildButtonContainer: {fileID: 361607839}
   buildButtonPrefab: {fileID: 6514076768763725129, guid: 4c078caf303fb2c49b1b96bfe8b9ead5, type: 3}
+  autoRefreshInterval: 1
 --- !u!114 &1626563126
 MonoBehaviour:
   m_ObjectHideFlags: 0

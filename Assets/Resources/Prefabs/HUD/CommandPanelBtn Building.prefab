@@ -8,6 +8,30 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 750986880906664733, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
+      propertyPath: m_fontColor.b
+      value: 0.87058824
+      objectReference: {fileID: 0}
+    - target: {fileID: 750986880906664733, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
+      propertyPath: m_fontColor.g
+      value: 0.87058824
+      objectReference: {fileID: 0}
+    - target: {fileID: 750986880906664733, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
+      propertyPath: m_fontColor.r
+      value: 0.87058824
+      objectReference: {fileID: 0}
+    - target: {fileID: 750986880906664733, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292796126
+      objectReference: {fileID: 0}
+    - target: {fileID: 1622913531460692382, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
+      propertyPath: m_Transition
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1622913531460692382, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
+      propertyPath: m_Colors.m_FadeDuration
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2628172639168449729, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -91,6 +115,22 @@ PrefabInstance:
     - target: {fileID: 8049567334694552882, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
       propertyPath: m_Name
       value: CommandPanelBtn Building
+      objectReference: {fileID: 0}
+    - target: {fileID: 8249501071474479245, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
+      propertyPath: m_fontColor.b
+      value: 0.8679245
+      objectReference: {fileID: 0}
+    - target: {fileID: 8249501071474479245, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
+      propertyPath: m_fontColor.g
+      value: 0.8679245
+      objectReference: {fileID: 0}
+    - target: {fileID: 8249501071474479245, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
+      propertyPath: m_fontColor.r
+      value: 0.8679245
+      objectReference: {fileID: 0}
+    - target: {fileID: 8249501071474479245, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
+      propertyPath: m_fontColor32.rgba
+      value: 4292730333
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: -8090959321347901297, guid: e5f36196c512ec74bb3bf76da9e88b8e, type: 3}
