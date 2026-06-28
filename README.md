@@ -11,7 +11,7 @@ This repository contains the source code for the game Brawlbound in the src fold
 
 The documentation for the project can be found in the docs folder.
 
-Built versions of the game that contain the executable file are located in the release section of the repository.
+Built versions of the game that contain the executable file are located in the Releases section of the repository.
 
 ## Project Description
 
